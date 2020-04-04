@@ -17,6 +17,7 @@ public class MainActivity extends AppCompatActivity {
 
     Button mButton;
     private final static int REQUEST_CODE_READ_PERMISSION = 01;
+
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
                     Manifest.permission.WRITE_EXTERNAL_STORAGE,
                     Manifest.permission.CAMERA}, REQUEST_CODE_READ_PERMISSION);
         } else {
-            //  requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_CODE_READ_PERMISSION);
+            // second and subsequent denials
             requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE,
                     Manifest.permission.CAMERA}, REQUEST_CODE_READ_PERMISSION);
@@ -83,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED && grantResults[2] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, "yeah I am asking permission for the first time and you granted it", Toast.LENGTH_SHORT).show();
                 } else if (!(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE))
-                        || !(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) ||
+                        && !(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) &&
                         !(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA))) {
                     Toast.makeText(this, "go to setting and accept the permission", Toast.LENGTH_SHORT).show();
                 } else {
