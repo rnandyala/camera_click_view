@@ -45,17 +45,18 @@ public class MainActivity extends AppCompatActivity {
         ) {
             Toast.makeText(this, "already_granted_the_permission", Toast.LENGTH_SHORT).show();
 // user granted permission
+
         }
         // for second time when user visits this gets executed
         else if ((ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE))
 
                 &&
                 (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE))
-                &&
+    &&
                 (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA))
 
         ) {
-            Toast.makeText(this, "required read permission or else we cannot read data from the gallery", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "required camera, write  & read permission or else", Toast.LENGTH_SHORT).show();
 
             requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -83,7 +84,12 @@ public class MainActivity extends AppCompatActivity {
 // gets called when we request the permission for the first time
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED && grantResults[2] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, "yeah I am asking permission for the first time and you granted it", Toast.LENGTH_SHORT).show();
-                } else if (!(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE))
+                }
+          // on check & deny shouldshowrequestpermissionrationale will  be false
+                // as well as when I allow  permission shouldshowrequestpermissionrationale will be false
+                //
+                // else it will be true
+                else if (!(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE))
                         && !(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) &&
                         !(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA))) {
                     Toast.makeText(this, "go to setting and accept the permission", Toast.LENGTH_SHORT).show();
@@ -96,4 +102,8 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
+
+
+
 }
