@@ -2,10 +2,14 @@ package com.example.camera;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.graphics.Camera;
 import android.graphics.ImageFormat;
 import android.graphics.Point;
@@ -25,6 +29,9 @@ import android.media.ImageReader;
 import android.os.Build;
 import android.os.Bundle;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestOptions;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -32,6 +39,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 
 import android.os.Handler;
@@ -44,6 +52,7 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -60,12 +69,14 @@ import java.util.concurrent.TimeUnit;
 import static android.widget.Toast.LENGTH_SHORT;
 
 public class CameraActivity extends AppCompatActivity {
+
     private Image mCapturedImage;
     private boolean mIsImageAvailable = false;
     private ImageReader mImageReader;
     private static final String TAG = "Camera2API";
     private static final int REQUEST_CAMERA_PERMISSION = 1;
-    // private static final String FRAGMENT_DIALOG = "dialog";
+    private ImageView mInternalMemoryImage;
+    private ConstraintLayout mConstraintContainer;
     /**
      * Camera state: Showing camera preview.
      */
@@ -182,6 +193,34 @@ public class CameraActivity extends AppCompatActivity {
     }
 
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+    }
+
+    @Override
+    protected void onPause() {
+        closeCamera();
+        stopBackgroundThread();
+        super.onPause();
+    }
+
+    @Override
+    protected void onStop() {
+        closeCamera();
+        unregisterReceiver(mReceiver);
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    // instance of callback
+
+
+
     // call back to infalte surface
 
     private TextureView.SurfaceTextureListener mSurfaceTextureListener = new TextureView.SurfaceTextureListener() {
@@ -209,21 +248,27 @@ public class CameraActivity extends AppCompatActivity {
         }
     };
 
+    /**
+     * Stops the background thread and its {@link Handler}.
+     */
+    private void stopBackgroundThread() {
+        if (mBackgroundThread != null) {
+            mBackgroundThread.quitSafely();
+            try {
+                mBackgroundThread.join();
+                mBackgroundThread = null;
+                mBackgroundHandler = null;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 
     //"@+id/texture"
     ImageButton mCamera;
     private final static int REQUEST_CODE_READ_PERMISSION = 01;
 
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-    }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -231,6 +276,10 @@ public class CameraActivity extends AppCompatActivity {
         super.onResume();
         startBackGroundProcess();
         reOpenCamera();
+        IntentFilter mIntentFilterAction = new IntentFilter();
+mIntentFilterAction.addAction("Custom_Intent");
+
+        registerReceiver(mReceiver, mIntentFilterAction);
 
     }
     /*
@@ -288,11 +337,16 @@ public class CameraActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-    }
+    private BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
 
+
+         byte []  byteArray =  intent.getByteArrayExtra("image");
+         displayCapturedImage(byteArray);
+
+        }
+    };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -300,15 +354,26 @@ public class CameraActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+
+
+
+
+        mConstraintContainer = findViewById(R.id.image_container);
+        mInternalMemoryImage = findViewById(R.id.mCapturedBitmap);
+
         mTextureView = findViewById(R.id.texture);
         mCamera = findViewById(R.id.camera);
 
+
         mCamera.setOnClickListener(
                 new View.OnClickListener() {
+                    @RequiresApi(api = Build.VERSION_CODES.M)
                     @Override
                     public void onClick(View v) {
+                        if (!mIsImageAvailable) {
+                            takePicture();
+                        }
 
-                        takePicture();
                         Toast.makeText(CameraActivity.this, "take a pic", LENGTH_SHORT).show();
                     }
                 }
@@ -317,6 +382,14 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void takePicture() {
+        /*case R.id.stillshot: {
+            if(!mIsImageAvailable){
+                Log.d(TAG, "onClick: taking picture.");
+                takePicture();
+            }
+            break;
+        }*/
+
 
         lockFocus();
     }
@@ -496,6 +569,8 @@ public class CameraActivity extends AppCompatActivity {
     // All this method does collect list of available aspect ratios and filter
     // the appropriate resolution and assign it to the preview size
 
+    // CameraMaxnager has list of characteristics that characterstics are use to find the filterID such as front or back facing camera
+
     /**
      * Sets up member variables related to camera.
      * <p>
@@ -507,8 +582,8 @@ public class CameraActivity extends AppCompatActivity {
     @SuppressWarnings("SuspiciousNameCombination")
     private void setUpCameraOutputs(int width, int height) {
         Activity activity = CameraActivity.this;
-        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
 
+        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {
             findCameraIds();
 
@@ -951,6 +1026,13 @@ public class CameraActivity extends AppCompatActivity {
                     Log.d(TAG, "onImageSavedCallback: image saved!");
 
                     mIsImageAvailable = true;
+
+
+
+                    Intent i = new Intent(CameraActivity.this, ReadImage.class);
+                    startService(i);
+                    mCapturedImage.close();
+
                 } else {
                     Log.d(TAG, "onImageSavedCallback: error saving image: " + e.getMessage());
                     showSnackBar("Error displaying image", Snackbar.LENGTH_SHORT);
@@ -986,6 +1068,19 @@ public class CameraActivity extends AppCompatActivity {
 
 
     }
+/*
+    @Override
+    public void getBitMapImage(Bitmap mBitMap) {
+
+mImageView.setImageBitmap(mBitMap);
+closeCamera();
+    }
+
+    @Override
+    public void errorResult(String s) {
+        Toast.makeText(this, "unable to read image from the storage:: "+s,LENGTH_SHORT).show();
+
+    }*/
 
 
     /**
@@ -1023,8 +1118,7 @@ public class CameraActivity extends AppCompatActivity {
                 try {
                     File file = new File(mFile, "temp_image.jpg");
 
-                    // This add images to the gallery
-                    addImageToGallery(file.getAbsolutePath(), mContext);
+                    // This add images to the galleryaddImageToGallery(file.getAbsolutePath(), mContext);
 
 
                     output = new FileOutputStream(file);
@@ -1042,24 +1136,77 @@ public class CameraActivity extends AppCompatActivity {
                         }
                     }
                     mCallback.done(null);
+
+
                 }
             }
         }
     }
 
 
+    private void showStillshotContainer() {
 
-
-    /*
-    private void showStillshotContainer(){
-        mStillshotContainer.setVisibility(View.VISIBLE);
-        mFlashContainer.setVisibility(View.INVISIBLE);
-        mSwitchOrientationContainer.setVisibility(View.INVISIBLE);
-        mCaptureBtnContainer.setVisibility(View.INVISIBLE);
-
-        mIMainActivity.hideStatusBar();
+        mConstraintContainer.setVisibility(View.VISIBLE);
         closeCamera();
-  } */
+
+    }
+
+
+    /**
+     * Closes the current {@link CameraDevice}.
+     * close capturesession,
+     * close cameradevice,
+     * close imageReader
+     */
+    private void closeCamera() {
+
+        try {
+            mCameraOpenCloseLock.acquire();
+            if (null != mCaptureSession) {
+                mCaptureSession.close();
+                mCaptureSession = null;
+            }
+            if (null != mCameraDevice) {
+                mCameraDevice.close();
+                mCameraDevice = null;
+            }
+            if (null != mImageReader) {
+                mImageReader.close();
+                mImageReader = null;
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
+        } finally {
+            mCameraOpenCloseLock.release();
+        }
+    }
+
+    // display captured picture
+private void displayCapturedImage(byte [] mByteArrayImage){
+        Log.d(TAG,"displayCaptureImage: displaying stillshot image.");
+        final Activity activity = CameraActivity.this;
+        if(activity != null){
+            activity.runOnUiThread( () -> {
+
+                RequestOptions options = new RequestOptions()
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .skipMemoryCache(true)
+                        .centerCrop();
+
+
+                Glide.with(activity)
+                        .setDefaultRequestOptions(options)
+                        .load(mByteArrayImage)
+                        .into(mInternalMemoryImage);
+showStillshotContainer();
+                    }
+
+
+
+            );
+        }
+}
+
 
 }
 
