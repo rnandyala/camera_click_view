@@ -10,12 +10,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.graphics.Bitmap;
-import android.graphics.Camera;
 import android.graphics.ImageFormat;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
-import android.graphics.drawable.Drawable;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -32,20 +29,6 @@ import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.request.RequestOptions;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.core.app.ActivityCompat;
-
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -59,6 +42,18 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.app.ActivityCompat;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestOptions;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -77,6 +72,13 @@ import static android.widget.Toast.LENGTH_SHORT;
 
 public class CameraActivity extends AppCompatActivity {
 
+
+    static Uri tempImageUri;
+    private ImageButton mDiscardImage;
+    private ImageButton mAcceptImage;
+
+
+    private static String fileName;
     private MediaRecorder mMediaRecorder;
     private Size mVideoSize;
 
@@ -207,6 +209,69 @@ public class CameraActivity extends AppCompatActivity {
         ORIENTATIONS.append(Surface.ROTATION_90, 0);
         ORIENTATIONS.append(Surface.ROTATION_180, 270);
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
+    }
+
+
+    private void acceptImage() {
+
+        mAcceptImage.setOnClickListener(
+
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent mThumbnailIntent = new Intent();
+
+                        //
+
+                        if(!fileName.isEmpty()) {
+
+                            mThumbnailIntent.putExtra("fileName",fileName );
+
+                            setResult(RESULT_OK, mThumbnailIntent);
+                            finish();
+                        }
+                        else{
+                            Toast.makeText(CameraActivity.this, "unable to save the file buddy",Toast.LENGTH_LONG).show();
+                        }
+
+                    }
+                }
+
+        );
+
+    }
+
+
+    private void discardImage() {
+        mDiscardImage.setOnClickListener(
+
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                        // The below method retruns the file object
+                        getFilesDir();
+
+                        // Where as this method return the path
+                        String dir = getFilesDir().getAbsolutePath();
+                        if (!fileName.isEmpty())
+                            try {
+                                // getExternalFilesDir gives path of application directory
+                                File mFile = new File(getApplicationContext().getExternalFilesDir(null), fileName);
+                                //get the imageUri
+                                tempImageUri = Uri.fromFile(mFile);
+                                CameraActivity.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, tempImageUri));
+
+                                //         MediaStore.Images.Media.getBitmap(getApplicationContext().getContentResolver(), tempImageUri);
+
+                            } catch (Exception ex) {
+
+                            }
+
+
+                    }
+                }
+        );
     }
 
 
@@ -372,6 +437,12 @@ public class CameraActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
 
+        //discard_image
+        mDiscardImage = findViewById(R.id.discard_image);
+
+
+        mAcceptImage = findViewById(R.id.accept_image);
+
         mVideoRecorder = findViewById(R.id.record_video);
 
 
@@ -380,23 +451,18 @@ public class CameraActivity extends AppCompatActivity {
 
         mTextureView = findViewById(R.id.texture);
         mCamera = findViewById(R.id.camera);
-
-
+        discardImage();
+        acceptImage();
         mVideoRecorder.setOnClickListener(
-
                 new View.OnClickListener() {
                     @RequiresApi(api = Build.VERSION_CODES.M)
                     @Override
                     public void onClick(View v) {
-
                         if (isVideorecording) {
 // when video is not being recorded then
-
                             videoRecording();
-mMediaRecorder.stop();
-mMediaRecorder.reset();
-
-
+                            mMediaRecorder.stop();
+                            mMediaRecorder.reset();
                             isVideorecording = false;
                             //Drawable img = getResources().getDrawable(android.R.d)
                             mVideoRecorder.setImageDrawable(getResources().getDrawable(android.R.drawable.presence_video_online));
@@ -583,15 +649,14 @@ mMediaRecorder.reset();
             mCameraDevice = cameraDevice;
             mMediaRecorder = new MediaRecorder();
 
-            if(isVideorecording){
+            if (isVideorecording) {
                 startRecord();
                 mMediaRecorder.start();
-            }
-            else {
+            } else {
 
                 createCameraPreviewSession();
             }
-            }
+        }
 
         @Override
         public void onDisconnected(@NonNull CameraDevice cameraDevice) {
@@ -770,7 +835,7 @@ mMediaRecorder.reset();
                 mVideoSize = Utility.chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
 
                         rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth, maxPreviewHeight, largest
-                        );
+                );
             }
 
 
@@ -1077,7 +1142,7 @@ mMediaRecorder.reset();
         }
     }
 
-    private void startRecord(){
+    private void startRecord() {
 
         try {
             setUpMediaRecorder();
@@ -1094,13 +1159,14 @@ mMediaRecorder.reset();
 
             mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
 
-            mPreviewRequestBuilder.addTarget(surface);mPreviewRequestBuilder.addTarget(recordSurface);
+            mPreviewRequestBuilder.addTarget(surface);
+            mPreviewRequestBuilder.addTarget(recordSurface);
             mCameraDevice.createCaptureSession(Arrays.asList(surface, recordSurface),
                     new CameraCaptureSession.StateCallback() {
                         @Override
                         public void onConfigured(@NonNull CameraCaptureSession session) {
                             try {
-                                session.setRepeatingRequest(mPreviewRequestBuilder.build(), null,null);
+                                session.setRepeatingRequest(mPreviewRequestBuilder.build(), null, null);
                             } catch (CameraAccessException e) {
                                 e.printStackTrace();
                             }
@@ -1110,7 +1176,7 @@ mMediaRecorder.reset();
                         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
 
                         }
-                    },null);
+                    }, null);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -1151,6 +1217,11 @@ mMediaRecorder.reset();
 
 
                     Intent i = new Intent(CameraActivity.this, ReadImage.class);
+                    if (fileName != null) {
+                        i.putExtra("fileNameOfImage", fileName);
+                    } else {
+                        Toast.makeText(CameraActivity.this, "image not available in the storage", Toast.LENGTH_LONG);
+                    }
                     startService(i);
                     mCapturedImage.close();
 
@@ -1237,11 +1308,22 @@ closeCamera();
                 buffer.get(bytes);
                 FileOutputStream output = null;
                 try {
-                    File file = new File(mFile, "temp_image.jpg");
+
+                    /*
+                    formatter = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
+                    strDate = formatter.format(date);
+*/
+                    Date mDate = new Date();
+                    SimpleDateFormat formatter = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
+                    String mCurrentDateTime = formatter.format(mDate);
+
+                    fileName = mCurrentDateTime + "image.jpg";
+                    File file = new File(mFile, fileName);
+
+
+
 
                     // This add images to the galleryaddImageToGallery(file.getAbsolutePath(), mContext);
-
-
                     output = new FileOutputStream(file);
                     output.write(bytes);
                 } catch (IOException e) {
@@ -1251,6 +1333,7 @@ closeCamera();
                     mImage.close();
                     if (null != output) {
                         try {
+                            output.flush();
                             output.close();
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -1328,21 +1411,6 @@ closeCamera();
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // video saver
 
 
@@ -1363,7 +1431,7 @@ closeCamera();
 
         private ICallback mCallback;
 
-        VideoSaver (Image image, File file, ICallback callback, Context mContext) {
+        VideoSaver(Image image, File file, ICallback callback, Context mContext) {
             mImage = image;
             mFile = file;
             mCallback = callback;
@@ -1407,56 +1475,24 @@ closeCamera();
     }
 
 
-    private void setUpMediaRecorder() throws IOException{
+    private void setUpMediaRecorder() throws IOException {
 //  CameraActivity.this.getExternalFilesDir(null)
-     //   getExternalFilesDir(null).getAbsolutePath();
+        //   getExternalFilesDir(null).getAbsolutePath();
 
         File file = new File(getExternalFilesDir(null), "temp_video.mp4");
-file.getAbsolutePath();
+        file.getAbsolutePath();
 
-mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-mMediaRecorder.setOutputFile(  file.getAbsolutePath());
-mMediaRecorder.setVideoEncodingBitRate(1000000);
-mMediaRecorder.setVideoFrameRate(30);
-mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
-    mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-   // mMediaRecorder.setOrientationHint();
-mMediaRecorder.prepare();
+        mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+        mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        mMediaRecorder.setOutputFile(file.getAbsolutePath());
+        mMediaRecorder.setVideoEncodingBitRate(1000000);
+        mMediaRecorder.setVideoFrameRate(30);
+        mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+        mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        // mMediaRecorder.setOrientationHint();
+        mMediaRecorder.prepare();
 
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 }

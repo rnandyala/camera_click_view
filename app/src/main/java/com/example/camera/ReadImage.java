@@ -57,15 +57,18 @@ public class ReadImage extends IntentService {
 
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
+
+        String fileName = intent.getStringExtra("fileNameOfImage");
+
         //    Environment.getExternalStorageDirectory();
         // returns path of application directory when the external drive is mounted
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state)) {
             // getExternalFilesDir gives path of application directory
-            File mFile = new File(getApplicationContext().getExternalFilesDir(null), "temp_image.jpg");
+            File mFile = new File(getApplicationContext().getExternalFilesDir(null), fileName);
            //get the imageUri
             final Uri tempImageUri = Uri.fromFile(mFile);
-
+           // final Uri tempImageUri = Uri.fromFile(mFile);
             Bitmap bitmap = null;
             try {
                 // ExifInterface used for rotation and saving picture
@@ -93,6 +96,7 @@ public class ReadImage extends IntentService {
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 50, stream);
                     byte [] byteArray = stream.toByteArray();
                     Intent in1 = new Intent();
+
                     in1.putExtra("image", byteArray);
                     in1.setAction("Custom_Intent");
                     // set action here and listen to this action when registering receiver

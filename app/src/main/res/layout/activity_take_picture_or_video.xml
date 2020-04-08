@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".TakePictureOrVideo">
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/vertical_guide_line_start"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.05" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/vertical_guide_line_end"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.95" />
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Event"
+        android:textAllCaps="false"
+        android:textSize="30sp"
+        app:layout_constraintStart_toStartOf="@id/vertical_guide_line_start"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.appcompat.widget.AppCompatSpinner
+        android:id="@+id/spinner_for_Events"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/camera_cam_guideline"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.1" />
+
+
+    <TextView
+        android:id="@+id/mPicture_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Picture"
+        android:textSize="30sp"
+        app:layout_constraintStart_toStartOf="@id/vertical_guide_line_start"
+        app:layout_constraintTop_toTopOf="@id/open_camera"
+        app:layout_constraintBottom_toBottomOf="@id/open_camera"/>
+
+    <ImageButton
+        android:id="@+id/open_camera"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_marginTop="40dp"
+        android:layout_marginEnd="40dp"
+        android:src="@android:drawable/ic_menu_camera"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/camera_cam_guideline" />
+
+    <TextView
+        android:id="@+id/record_video_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Video"
+        android:textSize="30sp"
+        app:layout_constraintBottom_toBottomOf="@+id/record_video"
+        app:layout_constraintStart_toStartOf="@id/vertical_guide_line_start"
+        app:layout_constraintTop_toTopOf="@id/record_video" />
+
+    <ImageButton
+        android:id="@+id/record_video"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_marginTop="40dp"
+        android:layout_marginEnd="40dp"
+        android:src="@android:drawable/presence_video_online"
+        app:layout_constraintEnd_toEndOf="@id/vertical_guide_line_end"
+        app:layout_constraintTop_toBottomOf="@id/camera_cam_guideline" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/group_video"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        app:constraint_referenced_ids="record_video_text,record_video" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/group_picture"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="mPicture_text,open_camera" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/picture_state"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintGuide_percent="0.5"
+        android:orientation="horizontal"/>
+
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/button_divider"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        app:layout_constraintGuide_percent="0.5"
+        android:orientation="vertical"/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <Button
+        android:id="@+id/cancel_button"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/cam_icon"
+        android:layout_marginEnd="8dp"
+        android:text="CANCEL"
+        app:layout_constraintStart_toStartOf="@id/vertical_guide_line_start"
+        app:layout_constraintEnd_toEndOf="@id/button_divider"
+        app:layout_constraintTop_toBottomOf="@id/picture_state"/>
+    <Button
+        android:id="@+id/save"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/cam_icon"
+        android:text="SAVE"
+        android:layout_marginStart="8dp"
+        app:layout_constraintStart_toEndOf="@id/button_divider"
+        app:layout_constraintTop_toTopOf="@id/picture_state"
+        app:layout_constraintEnd_toEndOf="@id/vertical_guide_line_end"/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
