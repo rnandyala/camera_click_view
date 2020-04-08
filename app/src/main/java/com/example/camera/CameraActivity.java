@@ -3,6 +3,7 @@ package com.example.camera;
 import android.Manifest;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -14,6 +15,7 @@ import android.graphics.Camera;
 import android.graphics.ImageFormat;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
+import android.graphics.drawable.Drawable;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -26,6 +28,8 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
+import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -42,6 +46,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.provider.MediaStore;
@@ -59,9 +64,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -69,6 +76,16 @@ import java.util.concurrent.TimeUnit;
 import static android.widget.Toast.LENGTH_SHORT;
 
 public class CameraActivity extends AppCompatActivity {
+
+    private MediaRecorder mMediaRecorder;
+    private Size mVideoSize;
+
+    private ImageButton mVideoRecorder;
+
+    private File mVideoFolder;
+
+    private String mVideoFileName;
+
 
     private Image mCapturedImage;
     private boolean mIsImageAvailable = false;
@@ -161,7 +178,7 @@ public class CameraActivity extends AppCompatActivity {
 
     private float ASPECT_RATIO_ERROR_RANGE = 0.1f;
 
-
+    private boolean isVideorecording = false;
     /**
      * Camera state: Waiting for the focus to be locked.
      */
@@ -220,7 +237,6 @@ public class CameraActivity extends AppCompatActivity {
     // instance of callback
 
 
-
     // call back to infalte surface
 
     private TextureView.SurfaceTextureListener mSurfaceTextureListener = new TextureView.SurfaceTextureListener() {
@@ -277,7 +293,7 @@ public class CameraActivity extends AppCompatActivity {
         startBackGroundProcess();
         reOpenCamera();
         IntentFilter mIntentFilterAction = new IntentFilter();
-mIntentFilterAction.addAction("Custom_Intent");
+        mIntentFilterAction.addAction("Custom_Intent");
 
         registerReceiver(mReceiver, mIntentFilterAction);
 
@@ -342,11 +358,12 @@ mIntentFilterAction.addAction("Custom_Intent");
         public void onReceive(Context context, Intent intent) {
 
 
-         byte []  byteArray =  intent.getByteArrayExtra("image");
-         displayCapturedImage(byteArray);
+            byte[] byteArray = intent.getByteArrayExtra("image");
+            displayCapturedImage(byteArray);
 
         }
     };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -355,7 +372,7 @@ mIntentFilterAction.addAction("Custom_Intent");
         setSupportActionBar(toolbar);
 
 
-
+        mVideoRecorder = findViewById(R.id.record_video);
 
 
         mConstraintContainer = findViewById(R.id.image_container);
@@ -363,6 +380,39 @@ mIntentFilterAction.addAction("Custom_Intent");
 
         mTextureView = findViewById(R.id.texture);
         mCamera = findViewById(R.id.camera);
+
+
+        mVideoRecorder.setOnClickListener(
+
+                new View.OnClickListener() {
+                    @RequiresApi(api = Build.VERSION_CODES.M)
+                    @Override
+                    public void onClick(View v) {
+
+                        if (isVideorecording) {
+// when video is not being recorded then
+
+                            videoRecording();
+mMediaRecorder.stop();
+mMediaRecorder.reset();
+
+
+                            isVideorecording = false;
+                            //Drawable img = getResources().getDrawable(android.R.d)
+                            mVideoRecorder.setImageDrawable(getResources().getDrawable(android.R.drawable.presence_video_online));
+                        } else {
+                            // when videos is recording then
+                            isVideorecording = true;
+                            mVideoRecorder.setImageDrawable(getResources().getDrawable(android.R.drawable.presence_video_busy));
+
+                            startRecord();
+                            mMediaRecorder.start();
+                        }
+
+                    }
+                }
+
+        );
 
 
         mCamera.setOnClickListener(
@@ -379,6 +429,9 @@ mIntentFilterAction.addAction("Custom_Intent");
                 }
 
         );
+    }
+
+    private void videoRecording() {
     }
 
     private void takePicture() {
@@ -436,7 +489,12 @@ mIntentFilterAction.addAction("Custom_Intent");
                 if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                     throw new RuntimeException("Time out waiting to lock camera opening.");
                 }
+
+                // cameraId is whether is front camera or a back camera details
+                //     cameradevice statecallback --> just used for preview
                 manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
+
+
             } catch (CameraAccessException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
@@ -523,8 +581,17 @@ mIntentFilterAction.addAction("Custom_Intent");
             // This method is called when the camera is opened.  We start camera preview here.
             mCameraOpenCloseLock.release();
             mCameraDevice = cameraDevice;
-            createCameraPreviewSession();
-        }
+            mMediaRecorder = new MediaRecorder();
+
+            if(isVideorecording){
+                startRecord();
+                mMediaRecorder.start();
+            }
+            else {
+
+                createCameraPreviewSession();
+            }
+            }
 
         @Override
         public void onDisconnected(@NonNull CameraDevice cameraDevice) {
@@ -592,6 +659,7 @@ mIntentFilterAction.addAction("Custom_Intent");
 
             Log.d(TAG, "setUpCameraOutputs: camera id: " + mCameraId);
 
+
             StreamConfigurationMap map = characteristics.get(
                     CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             assert map != null;
@@ -623,16 +691,20 @@ mIntentFilterAction.addAction("Custom_Intent");
                 largest = Collections.max(
                         sizes,
                         new Utility.CompareSizesByArea());
+
+
                 mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(), ImageFormat.JPEG, 2);
                 mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);
-
-
                 Log.d(TAG, "setUpCameraOutputs: largest width: " + largest.getWidth());
                 Log.d(TAG, "setUpCameraOutputs: largest height: " + largest.getHeight());
+
+
             } else if (sizes.size() > 0) {
                 largest = Collections.max(
                         sizes,
                         new Utility.CompareSizesByArea());
+
+
                 mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(), ImageFormat.JPEG, 2);
                 mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);
                 Log.d(TAG, "setUpCameraOutputs: largest width: " + largest.getWidth());
@@ -694,6 +766,11 @@ mIntentFilterAction.addAction("Custom_Intent");
                 mPreviewSize = Utility.chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
                         rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
                         maxPreviewHeight, largest);
+
+                mVideoSize = Utility.chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
+
+                        rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth, maxPreviewHeight, largest
+                        );
             }
 
 
@@ -736,11 +813,13 @@ mIntentFilterAction.addAction("Custom_Intent");
                 if (cameraId == null) continue;
                 CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
                 int facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-                if (facing == CameraCharacteristics.LENS_FACING_FRONT) {
-                    mCameraId = cameraId;
-                } else if (facing == CameraCharacteristics.LENS_FACING_BACK) {
+                if (facing == CameraCharacteristics.LENS_FACING_BACK) {
                     mCameraId = cameraId;
                 }
+           /*
+               else if (facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                    mCameraId = cameraId;
+                }*/
             }
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -935,6 +1014,7 @@ mIntentFilterAction.addAction("Custom_Intent");
     mCaptureSession.setRepeatingRequest(mPreviewRequest, mCaptureCallback, mBackgroundHandler);
      */
 
+    // create preview session is equivalent to startPreview session
     private void createCameraPreviewSession() {
 
 
@@ -957,7 +1037,6 @@ mIntentFilterAction.addAction("Custom_Intent");
 
 
             // Here, we create a CameraCaptureSession for camera preview.
-
             mCameraDevice.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface()),
                     new CameraCaptureSession.StateCallback() {
 
@@ -998,6 +1077,49 @@ mIntentFilterAction.addAction("Custom_Intent");
         }
     }
 
+    private void startRecord(){
+
+        try {
+            setUpMediaRecorder();
+            SurfaceTexture texture = mTextureView.getSurfaceTexture();
+            assert texture != null;
+
+            // We configure the size of default buffer to be the size of camera preview we want.
+            texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+
+
+            // This is the output Surface we need to start preview.
+            Surface surface = new Surface(texture);
+            Surface recordSurface = mMediaRecorder.getSurface();
+
+            mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+
+            mPreviewRequestBuilder.addTarget(surface);mPreviewRequestBuilder.addTarget(recordSurface);
+            mCameraDevice.createCaptureSession(Arrays.asList(surface, recordSurface),
+                    new CameraCaptureSession.StateCallback() {
+                        @Override
+                        public void onConfigured(@NonNull CameraCaptureSession session) {
+                            try {
+                                session.setRepeatingRequest(mPreviewRequestBuilder.build(), null,null);
+                            } catch (CameraAccessException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                        @Override
+                        public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+
+                        }
+                    },null);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+
+    }
+
 
     private final ImageReader.OnImageAvailableListener mOnImageAvailableListener = new ImageReader.OnImageAvailableListener() {
         @Override
@@ -1026,7 +1148,6 @@ mIntentFilterAction.addAction("Custom_Intent");
                     Log.d(TAG, "onImageSavedCallback: image saved!");
 
                     mIsImageAvailable = true;
-
 
 
                     Intent i = new Intent(CameraActivity.this, ReadImage.class);
@@ -1182,30 +1303,160 @@ closeCamera();
     }
 
     // display captured picture
-private void displayCapturedImage(byte [] mByteArrayImage){
-        Log.d(TAG,"displayCaptureImage: displaying stillshot image.");
+    private void displayCapturedImage(byte[] mByteArrayImage) {
+        Log.d(TAG, "displayCaptureImage: displaying stillshot image.");
         final Activity activity = CameraActivity.this;
-        if(activity != null){
-            activity.runOnUiThread( () -> {
+        if (activity != null) {
+            activity.runOnUiThread(() -> {
 
-                RequestOptions options = new RequestOptions()
-                        .diskCacheStrategy(DiskCacheStrategy.NONE)
-                        .skipMemoryCache(true)
-                        .centerCrop();
+                        RequestOptions options = new RequestOptions()
+                                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                                .skipMemoryCache(true)
+                                .centerCrop();
 
 
-                Glide.with(activity)
-                        .setDefaultRequestOptions(options)
-                        .load(mByteArrayImage)
-                        .into(mInternalMemoryImage);
-showStillshotContainer();
+                        Glide.with(activity)
+                                .setDefaultRequestOptions(options)
+                                .load(mByteArrayImage)
+                                .into(mInternalMemoryImage);
+                        showStillshotContainer();
                     }
-
 
 
             );
         }
-}
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // video saver
+
+
+    /**
+     * Saves a MP4 {@link Image} into the specified {@link File}.
+     */
+    private static class VideoSaver implements Runnable {
+
+        /**
+         * The file we save the image into.
+         */
+        private final File mFile;
+        private Context mContext;
+        /**
+         * Original image that was captured
+         */
+        private Image mImage;
+
+        private ICallback mCallback;
+
+        VideoSaver (Image image, File file, ICallback callback, Context mContext) {
+            mImage = image;
+            mFile = file;
+            mCallback = callback;
+            this.mContext = mContext;
+        }
+
+        @Override
+        public void run() {
+
+            if (mImage != null) {
+                ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
+                byte[] bytes = new byte[buffer.remaining()];
+                buffer.get(bytes);
+                FileOutputStream output = null;
+                try {
+                    File file = new File(mFile, "temp_image.jpg");
+
+                    // This add images to the galleryaddImageToGallery(file.getAbsolutePath(), mContext);
+
+
+                    output = new FileOutputStream(file);
+                    output.write(bytes);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    mCallback.done(e);
+                } finally {
+                    mImage.close();
+                    if (null != output) {
+                        try {
+                            output.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    mCallback.done(null);
+
+
+                }
+            }
+        }
+    }
+
+
+    private void setUpMediaRecorder() throws IOException{
+//  CameraActivity.this.getExternalFilesDir(null)
+     //   getExternalFilesDir(null).getAbsolutePath();
+
+        File file = new File(getExternalFilesDir(null), "temp_video.mp4");
+file.getAbsolutePath();
+
+mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+mMediaRecorder.setOutputFile(  file.getAbsolutePath());
+mMediaRecorder.setVideoEncodingBitRate(1000000);
+mMediaRecorder.setVideoFrameRate(30);
+mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+    mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+   // mMediaRecorder.setOrientationHint();
+mMediaRecorder.prepare();
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 }

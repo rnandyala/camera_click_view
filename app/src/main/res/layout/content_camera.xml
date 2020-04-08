@@ -6,7 +6,6 @@
     app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
 
-
     <com.example.camera.ScalingTextureView
         android:id="@+id/texture"
         android:layout_width="wrap_content"
@@ -20,6 +19,7 @@
         android:id="@+id/flash"
         android:layout_width="70dp"
         android:layout_height="70dp"
+        android:visibility="gone"
         android:src="@color/cardview_dark_background"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -29,25 +29,34 @@
         android:layout_width="70dp"
         android:layout_height="70dp"
         android:layout_marginRight="20dp"
+        android:visibility="gone"
         android:src="@color/cardview_dark_background"
         app:layout_constraintEnd_toStartOf="@id/flash"
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageButton
         android:id="@+id/camera"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         android:background="@null"
         android:scaleType="fitXY"
         android:src="@drawable/cam_icon"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-<include
-    android:id="@+id/image_container"
-    layout="@layout/view_image_layout"
-    android:visibility="gone"
-    />
+    <ImageButton
+        android:id="@+id/record_video"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:background="@android:drawable/presence_video_online"
+        android:scaleType="fitXY"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+
+    <include
+        android:id="@+id/image_container"
+        layout="@layout/view_image_layout"
+        android:visibility="gone" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
