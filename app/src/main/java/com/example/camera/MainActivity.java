@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
                 &&
                 (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
         ) {
-            Toast.makeText(this, "already_granted_the_permission", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "already_granted_the_permissison", Toast.LENGTH_SHORT).show();
 // user granted permission
 
         }

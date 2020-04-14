@@ -3,13 +3,13 @@ package com.example.camera;
 import android.Manifest;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
-import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
@@ -26,12 +26,14 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
 import android.media.MediaRecorder;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
+import android.os.CancellationSignal;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Size;
@@ -39,6 +41,7 @@ import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
+import android.widget.Chronometer;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -46,13 +49,14 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
+import com.example.camera.cameraInterface.ICameraFacing;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.File;
@@ -70,16 +74,21 @@ import java.util.concurrent.TimeUnit;
 
 import static android.widget.Toast.LENGTH_SHORT;
 
-public class CameraActivity extends AppCompatActivity {
+public class CameraActivity extends AppCompatActivity implements ICameraFacing {
 
+private ImageButton mOrientation;
 
+    private String mCameraOrientation="none";
+    ICameraFacing mICameraFacing;
     static Uri tempImageUri;
     private ImageButton mDiscardImage;
     private ImageButton mAcceptImage;
-
+    String CAMERA_POSITION_FRONT = "";
+    String CAMERA_POSITION_BACK = "";
 
     private static String fileName;
     private MediaRecorder mMediaRecorder;
+    private Chronometer mChronometer;
     private Size mVideoSize;
 
     private ImageButton mVideoRecorder;
@@ -223,15 +232,14 @@ public class CameraActivity extends AppCompatActivity {
 
                         //
 
-                        if(!fileName.isEmpty()) {
+                        if (!fileName.isEmpty()) {
 
-                            mThumbnailIntent.putExtra("fileName",fileName );
+                            mThumbnailIntent.putExtra("fileName", fileName);
 
                             setResult(RESULT_OK, mThumbnailIntent);
-                            finish();
-                        }
-                        else{
-                            Toast.makeText(CameraActivity.this, "unable to save the file buddy",Toast.LENGTH_LONG).show();
+                            CameraActivity.this.finish();
+                        } else {
+                            Toast.makeText(CameraActivity.this, "unable to save the file buddy", Toast.LENGTH_LONG).show();
                         }
 
                     }
@@ -246,22 +254,37 @@ public class CameraActivity extends AppCompatActivity {
         mDiscardImage.setOnClickListener(
 
                 new View.OnClickListener() {
+                    @RequiresApi(api = Build.VERSION_CODES.M)
                     @Override
                     public void onClick(View v) {
 
                         // The below method retruns the file object
                         getFilesDir();
 
+
+
+
+
+
                         // Where as this method return the path
                         String dir = getFilesDir().getAbsolutePath();
                         if (!fileName.isEmpty())
                             try {
-                                // getExternalFilesDir gives path of application directory
+                                // get the file path
                                 File mFile = new File(getApplicationContext().getExternalFilesDir(null), fileName);
                                 //get the imageUri
                                 tempImageUri = Uri.fromFile(mFile);
+                                // what is happening here?
                                 CameraActivity.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, tempImageUri));
 
+
+                                closeCamera();
+                                reOpenCamera();
+                                mInternalMemoryImage.setVisibility(View.GONE);
+                                mDiscardImage.setVisibility(View.GONE);
+                                mAcceptImage.setVisibility(View.GONE);
+
+                              mIsImageAvailable = false;
                                 //         MediaStore.Images.Media.getBitmap(getApplicationContext().getContentResolver(), tempImageUri);
 
                             } catch (Exception ex) {
@@ -278,6 +301,10 @@ public class CameraActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        IntentFilter mIntentFilterAction = new IntentFilter();
+        mIntentFilterAction.addAction("Custom_Intent");
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, mIntentFilterAction);
     }
 
     @Override
@@ -290,7 +317,7 @@ public class CameraActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         closeCamera();
-        unregisterReceiver(mReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mReceiver);
         super.onStop();
     }
 
@@ -350,6 +377,8 @@ public class CameraActivity extends AppCompatActivity {
     ImageButton mCamera;
     private final static int REQUEST_CODE_READ_PERMISSION = 01;
 
+    private final static int REQUEST_CODE_VIDEO_PERMISSION = 786;
+
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -357,10 +386,7 @@ public class CameraActivity extends AppCompatActivity {
         super.onResume();
         startBackGroundProcess();
         reOpenCamera();
-        IntentFilter mIntentFilterAction = new IntentFilter();
-        mIntentFilterAction.addAction("Custom_Intent");
 
-        registerReceiver(mReceiver, mIntentFilterAction);
 
     }
     /*
@@ -425,7 +451,8 @@ public class CameraActivity extends AppCompatActivity {
 
             byte[] byteArray = intent.getByteArrayExtra("image");
             displayCapturedImage(byteArray);
-
+mDiscardImage.setVisibility(View.VISIBLE);
+mAcceptImage.setVisibility(View.VISIBLE);
         }
     };
 
@@ -433,24 +460,10 @@ public class CameraActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        intViews();
+        initIntent();
 
 
-        //discard_image
-        mDiscardImage = findViewById(R.id.discard_image);
-
-
-        mAcceptImage = findViewById(R.id.accept_image);
-
-        mVideoRecorder = findViewById(R.id.record_video);
-
-
-        mConstraintContainer = findViewById(R.id.image_container);
-        mInternalMemoryImage = findViewById(R.id.mCapturedBitmap);
-
-        mTextureView = findViewById(R.id.texture);
-        mCamera = findViewById(R.id.camera);
         discardImage();
         acceptImage();
         mVideoRecorder.setOnClickListener(
@@ -459,11 +472,33 @@ public class CameraActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
                         if (isVideorecording) {
+
+                            mChronometer.stop();
+                            mChronometer.setVisibility(View.GONE);
 // when video is not being recorded then
                             videoRecording();
                             mMediaRecorder.stop();
                             mMediaRecorder.reset();
                             isVideorecording = false;
+
+
+                            File mFile = new File(CameraActivity.this.getExternalFilesDir(null), mVideoFileName);
+                            final int THUMBSIZE = 400;
+                            //final Bitmap bitmap = ThumbnailUtils.createVideoThumbnail(recordedFile, MediaStore.Video.Thumbnails.MINI_KIND);
+
+                            CancellationSignal mCancelSignal = new CancellationSignal();
+                            fileName = mFile.getAbsolutePath();
+
+                            Bitmap mThumbImage = ThumbnailUtils.createVideoThumbnail(mVideoFileName, MediaStore.Video.Thumbnails.MINI_KIND);
+
+                            //   setmThumbImage(mThumbImage);
+                            mConstraintContainer.setVisibility(View.VISIBLE);
+                            mInternalMemoryImage.setImageBitmap(mThumbImage);
+                            mInternalMemoryImage.setVisibility(View.VISIBLE);
+
+                            mVideoFileName.toCharArray();
+
+                            fileName = mVideoFileName;
                             //Drawable img = getResources().getDrawable(android.R.d)
                             mVideoRecorder.setImageDrawable(getResources().getDrawable(android.R.drawable.presence_video_online));
                         } else {
@@ -473,6 +508,9 @@ public class CameraActivity extends AppCompatActivity {
 
                             startRecord();
                             mMediaRecorder.start();
+                            mChronometer.setBase(SystemClock.elapsedRealtime());
+                            mChronometer.setVisibility(View.VISIBLE);
+                            mChronometer.start();
                         }
 
                     }
@@ -488,13 +526,71 @@ public class CameraActivity extends AppCompatActivity {
                     public void onClick(View v) {
                         if (!mIsImageAvailable) {
                             takePicture();
+
                         }
 
-                        Toast.makeText(CameraActivity.this, "take a pic", LENGTH_SHORT).show();
+                        Toast.makeText(CameraActivity.this, "wait", LENGTH_SHORT).show();
                     }
                 }
 
         );
+
+
+
+
+        mOrientation.setOnClickListener(
+                new View.OnClickListener() {
+                    @RequiresApi(api = Build.VERSION_CODES.M)
+                    @Override
+                    public void onClick(View v) {
+                        toggleCameraDisplayOrientation();
+                    }
+                }
+        );
+
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private void toggleCameraDisplayOrientation() {
+
+        if(mCameraId.equals(mICameraFacing.getBackCameraId())){
+            mCameraId = mICameraFacing.getFrontCameraId();
+            mICameraFacing.setCameraFrontFacing();
+            closeCamera();
+            reOpenCamera();
+
+        }
+        else if(mCameraId.equals(mICameraFacing.getFrontCameraId())){
+            mCameraId = mICameraFacing.getBackCameraId();
+            mICameraFacing.setCameraBackFacing();
+            closeCamera();
+            reOpenCamera();
+        }
+    }
+
+    private void initIntent() {
+        Boolean mPhoto = getIntent().getExtras().getBoolean("picture");
+
+        Boolean mVideo = getIntent().getExtras().getBoolean("video");
+
+        if (mPhoto != null && mPhoto) {
+
+            mCamera.setVisibility(View.VISIBLE);
+            mVideoRecorder.setVisibility(View.GONE);
+        } else {
+
+            mVideoRecorder.setVisibility(View.VISIBLE);
+            mCamera.setVisibility(View.GONE);
+
+        }
+
+        String mFileName = getIntent().getExtras().getString(FormAction.VIDEO);
+
+        if (mFileName != null) {
+
+        }
+
+
     }
 
     private void videoRecording() {
@@ -545,7 +641,8 @@ public class CameraActivity extends AppCompatActivity {
                 (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
                 &&
                 (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
-        ) {
+                &&
+                (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)) {
             Toast.makeText(this, "already_granted_the_permission", Toast.LENGTH_SHORT).show();
             // preview size is set here
 
@@ -576,19 +673,26 @@ public class CameraActivity extends AppCompatActivity {
                 &&
                 (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE))
                 &&
-                (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA))
+                (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)
+                        &&
+                        (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.RECORD_AUDIO))
+                )
 
         ) {
             Toast.makeText(this, "required camera, write  & read permission or else", Toast.LENGTH_SHORT).show();
 
             requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                    Manifest.permission.CAMERA}, REQUEST_CODE_READ_PERMISSION);
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.RECORD_AUDIO}, REQUEST_CODE_READ_PERMISSION);
+
         } else {
             // first denial
             requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.RECORD_AUDIO,
                     Manifest.permission.CAMERA}, REQUEST_CODE_READ_PERMISSION);
+
 
         }
 
@@ -605,7 +709,10 @@ public class CameraActivity extends AppCompatActivity {
 // gets called when we request the permission for the first time
 
 // forget about this condition as we are opening camera in onresume checkselfPermission gets triggered every time,..
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED && grantResults[2] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED &&
+                        grantResults[1] == PackageManager.PERMISSION_GRANTED &&
+                        grantResults[2] == PackageManager.PERMISSION_GRANTED
+                        && grantResults[3] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, "yeah I am asking permission for the first time and you granted it", Toast.LENGTH_LONG).show();
 
                     //
@@ -618,12 +725,33 @@ public class CameraActivity extends AppCompatActivity {
                 // else it will be true
                 else if (!(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE))
                         && !(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) &&
-                        !(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA))) {
+                        !(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA))
+                        &&
+                        !(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.RECORD_AUDIO))
+
+                ) {
                     Toast.makeText(this, "go to setting and accept the permission", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, " oops I cannot open camera grant failed", Toast.LENGTH_LONG).show();
                 }
 
+
+
+
+                 /*
+                    if(grantResults.length>0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+
+                        Toast.makeText(this, "requesting audio permissions",Toast.LENGTH_LONG);
+                    }
+
+                    else if(!(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.RECORD_AUDIO))){
+                        Toast.makeText(this,"go to setting of the application and accept the permission", Toast.LENGTH_SHORT).show();
+                    }
+
+                    else{
+                        Toast.makeText(this, "oops I cannot record audio grant failed", Toast.LENGTH_LONG).show();
+                    }
+*/
 
         }
 
@@ -652,6 +780,9 @@ public class CameraActivity extends AppCompatActivity {
             if (isVideorecording) {
                 startRecord();
                 mMediaRecorder.start();
+                mChronometer.setBase(SystemClock.elapsedRealtime());
+                mChronometer.setVisibility(View.VISIBLE);
+                mChronometer.start();
             } else {
 
                 createCameraPreviewSession();
@@ -717,8 +848,11 @@ public class CameraActivity extends AppCompatActivity {
 
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {
-            findCameraIds();
-
+            mICameraFacing = this;
+// for initial case front and back facing camera will be false so it will find the cameraID
+            if (!(mICameraFacing.isCameraBackFacing()) && !(mICameraFacing.isCameraFrontFacing())) {
+                findCameraIds();
+            }
             CameraCharacteristics characteristics
                     = manager.getCameraCharacteristics(mCameraId);
 
@@ -867,24 +1001,39 @@ public class CameraActivity extends AppCompatActivity {
 
     }
 
-    // get whether it is front facing or a back facing camera
+    // set front and back facing camera ID's
     private void findCameraIds() {
         Activity activity = CameraActivity.this;
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
 
         try {
+            // returns two integers which determines whether it is a front facing camera or a back facing camera
             for (String cameraId : manager.getCameraIdList()) {
                 Log.d(TAG, "setCameraOrientation: CAMERA ID: " + cameraId);
                 if (cameraId == null) continue;
                 CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
                 int facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+
+
+
                 if (facing == CameraCharacteristics.LENS_FACING_BACK) {
-                    mCameraId = cameraId;
+                    //mCameraId = cameraId;
+                    //   mICameraFacing.
+
+                    mICameraFacing.setBackFacingCamera(cameraId);
                 }
-           /*
-               else if (facing == CameraCharacteristics.LENS_FACING_FRONT) {
-                    mCameraId = cameraId;
-                }*/
+
+                if (facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                    //  mCameraId = cameraId;
+
+                    mICameraFacing.setFrontFacingCamera(cameraId);
+                }
+
+                // for the first time launch we will set the camera to front facing
+
+                mICameraFacing.setCameraFrontFacing();
+
+                mCameraId = mICameraFacing.getFrontCameraId();
             }
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -1011,6 +1160,10 @@ public class CameraActivity extends AppCompatActivity {
             // Rotate the image from screen orientation to image orientation
             int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, getOrientation(rotation));
+
+            // before unlocking focus making views visible
+
+
 
             CameraCaptureSession.CaptureCallback CaptureCallback
                     = new CameraCaptureSession.CaptureCallback() {
@@ -1260,6 +1413,65 @@ public class CameraActivity extends AppCompatActivity {
 
 
     }
+
+    @Override
+    public boolean isCameraFrontFacing() {
+
+
+        if(mCameraOrientation.equals(CAMERA_POSITION_FRONT)){
+
+            return true;
+        }
+else {
+            return false;
+        }
+
+
+    }
+
+    @Override
+    public boolean isCameraBackFacing() {
+
+if(mCameraOrientation.equals(CAMERA_POSITION_BACK)){
+    return true;
+}
+else {
+
+    return false;
+}
+
+
+    }
+
+    @Override
+    public void setFrontFacingCamera(String mFrontFacingCameraId) {
+        CAMERA_POSITION_FRONT = mFrontFacingCameraId;
+    }
+
+    @Override
+    public void setBackFacingCamera(String mBackFacingCameraId) {
+        CAMERA_POSITION_BACK = mBackFacingCameraId;
+    }
+
+    @Override
+    public void setCameraFrontFacing() {
+mCameraOrientation =CAMERA_POSITION_FRONT;
+    }
+
+    @Override
+    public void setCameraBackFacing() {
+mCameraOrientation = CAMERA_POSITION_BACK;
+    }
+
+    @Override
+    public String getBackCameraId() {
+        return CAMERA_POSITION_BACK;
+    }
+
+    @Override
+    public String getFrontCameraId() {
+        return CAMERA_POSITION_FRONT;
+    }
 /*
     @Override
     public void getBitMapImage(Bitmap mBitMap) {
@@ -1309,18 +1521,16 @@ closeCamera();
                 FileOutputStream output = null;
                 try {
 
-                    /*
+                    /*x
                     formatter = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
                     strDate = formatter.format(date);
 */
                     Date mDate = new Date();
-                    SimpleDateFormat formatter = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
+                    SimpleDateFormat formatter = new SimpleDateFormat("dd-M-yyyy hh:mm:ss.SSS");
                     String mCurrentDateTime = formatter.format(mDate);
 
                     fileName = mCurrentDateTime + "image.jpg";
                     File file = new File(mFile, fileName);
-
-
 
 
                     // This add images to the galleryaddImageToGallery(file.getAbsolutePath(), mContext);
@@ -1480,17 +1690,41 @@ closeCamera();
         //   getExternalFilesDir(null).getAbsolutePath();
 
         File file = new File(getExternalFilesDir(null), "temp_video.mp4");
-        file.getAbsolutePath();
+        mVideoFileName = file.getAbsolutePath();
 
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+        mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+
         mMediaRecorder.setOutputFile(file.getAbsolutePath());
         mMediaRecorder.setVideoEncodingBitRate(1000000);
         mMediaRecorder.setVideoFrameRate(30);
         mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
         mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+
+        mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
         // mMediaRecorder.setOrientationHint();
         mMediaRecorder.prepare();
+
+    }
+
+
+    private void intViews() {
+
+// orientation
+
+        mOrientation = findViewById(R.id.switch_orientation);
+
+        //discard_image
+        mDiscardImage = findViewById(R.id.discard_image);
+        mAcceptImage = findViewById(R.id.accept_image);
+        mVideoRecorder = findViewById(R.id.record_video);
+        mConstraintContainer = findViewById(R.id.image_container);
+        mInternalMemoryImage = findViewById(R.id.mCapturedBitmap);
+
+        mTextureView = findViewById(R.id.texture);
+        mCamera = findViewById(R.id.camera);
+        mChronometer = findViewById(R.id.mChronometer);
 
     }
 

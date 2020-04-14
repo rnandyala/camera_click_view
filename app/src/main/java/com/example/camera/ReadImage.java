@@ -10,8 +10,10 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -82,12 +84,20 @@ public class ReadImage extends IntentService {
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 50, stream);
                    // convert bitmap to byteArray
                     byte[] byteArray = stream.toByteArray();
+//LocalBroadCastManager
+
+                    LocalBroadcastManager mLocalBroadCastManager = LocalBroadcastManager.getInstance(this);
+
 
                     Intent in1 = new Intent();
                     in1.putExtra("image", byteArray);
                     in1.setAction("Custom_Intent");
+
+                    mLocalBroadCastManager.sendBroadcast(in1);
                   // set action here and listen to this action when registering receiver
-                    sendBroadcast(in1);
+
+
+
                 } else {
                     bitmap = MediaStore.Images.Media.getBitmap(getApplicationContext().getContentResolver(), tempImageUri);
 
@@ -95,12 +105,21 @@ public class ReadImage extends IntentService {
                     ByteArrayOutputStream stream = new ByteArrayOutputStream();
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 50, stream);
                     byte [] byteArray = stream.toByteArray();
-                    Intent in1 = new Intent();
 
+
+
+
+                    Intent in1 = new Intent();
                     in1.putExtra("image", byteArray);
                     in1.setAction("Custom_Intent");
+
+
+                    LocalBroadcastManager mLocalBroadCastManager = LocalBroadcastManager.getInstance(this);
+                    mLocalBroadCastManager.sendBroadcast(in1);
+
+
                     // set action here and listen to this action when registering receiver
-                    sendBroadcast(in1);
+
 
                 }
             } catch (IOException ex) {

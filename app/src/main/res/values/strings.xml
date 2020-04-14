@@ -11,4 +11,7 @@
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
     <string name="title_activity_form">FormActivity</string>
     <string name="title_activity_form_action">FormAction</string>
+    <string name="tag_name">bitmap</string>
+    <string name="image">image_position</string>
+    <!--<string name="filename">file_name</string> -->
 </resources>

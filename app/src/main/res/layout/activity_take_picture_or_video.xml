@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".TakePictureOrVideo">
 
+
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/vertical_guide_line_start"
         android:layout_width="wrap_content"
@@ -51,9 +52,9 @@
         android:layout_height="wrap_content"
         android:text="Picture"
         android:textSize="30sp"
+        app:layout_constraintBottom_toBottomOf="@id/open_camera"
         app:layout_constraintStart_toStartOf="@id/vertical_guide_line_start"
-        app:layout_constraintTop_toTopOf="@id/open_camera"
-        app:layout_constraintBottom_toBottomOf="@id/open_camera"/>
+        app:layout_constraintTop_toTopOf="@id/open_camera" />
 
     <ImageButton
         android:id="@+id/open_camera"
@@ -94,74 +95,108 @@
 
     <androidx.constraintlayout.widget.Group
         android:id="@+id/group_picture"
-        android:visibility="gone"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:visibility="gone"
         app:constraint_referenced_ids="mPicture_text,open_camera" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/picture_state"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintGuide_percent="0.5"
-        android:orientation="horizontal"/>
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.5" />
 
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/button_divider"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        app:layout_constraintGuide_percent="0.5"
-        android:orientation="vertical"/>
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.5" />
 
 
+    <Button
+        android:id="@+id/cancel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/cam_icon"
+        android:text="cancel"
+        app:layout_constraintEnd_toStartOf="@+id/update_picture"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="@id/vertical_guide_line_start"
+        app:layout_constraintTop_toBottomOf="@id/picture_state" />
+
+    <Button
+        android:id="@+id/update_picture"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/cam_icon"
+        android:singleLine="true"
+        android:text="update"
+        app:layout_constraintEnd_toStartOf="@+id/delete_picture"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/cancel"
+        app:layout_constraintTop_toBottomOf="@id/picture_state" />
 
 
-
-
-
-
-
-
-
-
-
+    <Button
+        android:id="@+id/delete_picture"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/cam_icon"
+        android:text="Delete"
+        app:layout_constraintEnd_toStartOf="@id/vertical_guide_line_end"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/update_picture"
+        app:layout_constraintTop_toBottomOf="@id/picture_state" />
 
 
     <Button
         android:id="@+id/cancel_button"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@drawable/cam_icon"
         android:layout_marginEnd="8dp"
+        android:background="@drawable/cam_icon"
         android:text="CANCEL"
-        app:layout_constraintStart_toStartOf="@id/vertical_guide_line_start"
         app:layout_constraintEnd_toEndOf="@id/button_divider"
-        app:layout_constraintTop_toBottomOf="@id/picture_state"/>
+        app:layout_constraintStart_toStartOf="@id/vertical_guide_line_start"
+        app:layout_constraintTop_toBottomOf="@id/picture_state" />
+
     <Button
         android:id="@+id/save"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
         android:background="@drawable/cam_icon"
         android:text="SAVE"
-        android:layout_marginStart="8dp"
+        app:layout_constraintEnd_toEndOf="@id/vertical_guide_line_end"
         app:layout_constraintStart_toEndOf="@id/button_divider"
-        app:layout_constraintTop_toTopOf="@id/picture_state"
-        app:layout_constraintEnd_toEndOf="@id/vertical_guide_line_end"/>
+        app:layout_constraintTop_toTopOf="@id/picture_state" />
 
 
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/group_first_visit_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:constraint_referenced_ids="cancel_button, save" />
 
 
+    <!--
 
-
-
-
-
-
-
-
-
-
+ app:constraint_referenced_ids="farmerDetails1,farmerDetails2,
+ farmerDetails3,farmerDetails4,farmerDetails5"
+-->
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/group_update_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="visible"
+        app:constraint_referenced_ids="update_picture,delete_picture,cancel" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
