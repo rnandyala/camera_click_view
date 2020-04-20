@@ -78,6 +78,21 @@ public class ReadImage extends IntentService {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     // convert image to bitmap
                     bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(getApplicationContext().getContentResolver(), tempImageUri));
+
+
+                 int  width =    bitmap.getWidth();
+
+            int   height =     bitmap.getHeight();
+
+
+
+
+
+
+
+
+
+
                     //bitmap.getByteCount();
                     ByteArrayOutputStream stream = new ByteArrayOutputStream();
                     // compress image before passing back to activity

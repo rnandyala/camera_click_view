@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory android:title="Camera Settings">
+        <ListPreference
+            android:defaultValue="100"
+            android:dialogTitle="@string/image_quality"
+            android:entries="@array/image_quality"
+            android:entryValues="@array/image_quality_values"
+            android:key="PREF_UPDATE_IMAGE_QUALITY"
+            android:summary="reduces the size of image as well as quality"
+            android:title="@string/image_quality" />
+
+
+        <!--PREF_UPDATE_RESOULTION -->
+        <ListPreference
+            android:defaultValue="1920*1080"
+            android:entries="@array/image_resolution"
+            android:key="PREF_UPDATE_RESOULTION"
+            android:summary="configure different resoultions"
+            android:title="@string/camera_resolution"
+            app:entryValues="@array/image_resolution_values" />
+
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="video Settings">
+        <ListPreference
+            android:defaultValue="LOW"
+            android:dialogTitle="@string/video_size"
+            android:entries="@array/video_size"
+            android:entryValues="@array/video_size_value"
+            android:key="PREF_VIDEO_QUALITY"
+            android:summary="records video based on select quality"
+            android:title="@string/video_size" />
+
+        <!--PREF_UPDATE_RESOULTION -->
+        <ListPreference
+            android:defaultValue="1280*720"
+            android:entries="@array/video_resolution"
+            android:key="PREF_VIDEO_RESOULTION"
+            android:summary="configure different resoultions"
+            android:title="@string/video_resolution"
+            app:entryValues="@array/video_resolution_values" />
+    </PreferenceCategory>
+</PreferenceScreen>

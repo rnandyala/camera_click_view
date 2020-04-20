@@ -13,5 +13,65 @@
     <string name="title_activity_form_action">FormAction</string>
     <string name="tag_name">bitmap</string>
     <string name="image">image_position</string>
-    <!--<string name="filename">file_name</string> -->
-</resources>
+    <string name="title_activity_preference_settings">PreferenceSettings</string>
+
+
+    <!-- camera parameters  -->
+    <string name="image_quality">Image quality</string>
+    <string name="camera_resolution">Camera Resolution</string>
+    <string name="video_resolution">Video Resolution</string>
+    <string-array name="image_quality">
+        <item>20</item>
+        <item>40</item>
+        <item>60</item>
+        <item>80</item>
+        <item>100</item>
+    </string-array>
+    <string-array name="image_quality_values">
+        <item>20</item>
+        <item>40</item>
+        <item>60</item>
+        <item>80</item>
+        <item>100</item>
+    </string-array>
+    <string-array name="image_resolution">
+        <item>FULLHD</item>
+        <item>HD</item>
+        <item>NORMAL</item>
+    </string-array>
+    <string-array name="image_resolution_values">
+        <item>1920*1080</item>
+        <item>1280*720</item>
+        <item>640*480</item>
+    </string-array>
+
+
+    <!-- Video parameters -->
+    <string name="video_size">Video quality</string>
+    <string-array name="video_size">
+        <item>HIGH</item>
+        <item>LOW</item>
+    </string-array>
+    <string-array name="video_size_value">
+        <item>HIGH</item>
+        <item>LOW</item>
+    </string-array>
+
+    <string-array name="video_resolution">
+        <item>1280*720</item>
+        <item>720*480</item>
+        <item>640*480</item>
+        <item>320*240</item>
+    </string-array>
+    <string-array name="video_resolution_values">
+        <item>1280*720</item>
+        <item>720*480</item>
+        <item>640*480</item>
+        <item>320*240</item>
+    </string-array>
+
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources><!--<string name="filename">file_name</string> -->
+

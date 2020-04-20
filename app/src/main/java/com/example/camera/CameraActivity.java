@@ -1,5 +1,6 @@
 package com.example.camera;
 
+
 import android.Manifest;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -7,9 +8,12 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Camera;
 import android.graphics.ImageFormat;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
@@ -23,6 +27,7 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.CamcorderProfile;
 import android.media.Image;
 import android.media.ImageReader;
 import android.media.MediaRecorder;
@@ -35,6 +40,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.provider.MediaStore;
+import android.telecom.VideoProfile;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
@@ -47,11 +53,13 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.preference.PreferenceManager;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -74,11 +82,30 @@ import java.util.concurrent.TimeUnit;
 
 import static android.widget.Toast.LENGTH_SHORT;
 
-public class CameraActivity extends AppCompatActivity implements ICameraFacing {
+public class CameraActivity extends AppCompatActivity implements ICameraFacing, IBitmapConnector {
 
-private ImageButton mOrientation;
 
-    private String mCameraOrientation="none";
+    String mVideoUpdate;
+
+    String mVideoQuality;
+    String mVideResolution;
+    String mImageQuality;
+    String mImageResolution;
+
+    private IBitmapConnector mIBitmapConnector;
+
+    CameraSettingModel mCameraSettingModel;
+
+    public static final int REQUEST_CODE_SETTINGS = 786;
+
+    private ImageButton mOrientation;
+
+    private ImageButton mSettings;
+
+    private ConstraintLayout mPrimayContainerImageView;
+
+
+    private String mCameraOrientation = "none";
     ICameraFacing mICameraFacing;
     static Uri tempImageUri;
     private ImageButton mDiscardImage;
@@ -185,6 +212,7 @@ private ImageButton mOrientation;
 
     private int SCREEN_WIDTH = 0;
 
+
     private int SCREEN_HEIGHT = 0;
 
     private float ASPECT_RATIO_ERROR_RANGE = 0.1f;
@@ -236,6 +264,8 @@ private ImageButton mOrientation;
 
                             mThumbnailIntent.putExtra("fileName", fileName);
 
+                            mThumbnailIntent.putExtra("fromVideothubnail", mVideoUpdate);
+
                             setResult(RESULT_OK, mThumbnailIntent);
                             CameraActivity.this.finish();
                         } else {
@@ -262,10 +292,6 @@ private ImageButton mOrientation;
                         getFilesDir();
 
 
-
-
-
-
                         // Where as this method return the path
                         String dir = getFilesDir().getAbsolutePath();
                         if (!fileName.isEmpty())
@@ -280,11 +306,14 @@ private ImageButton mOrientation;
 
                                 closeCamera();
                                 reOpenCamera();
+                                //         mPrimayContainerImageView.setVisibility(View.GONE);
                                 mInternalMemoryImage.setVisibility(View.GONE);
                                 mDiscardImage.setVisibility(View.GONE);
                                 mAcceptImage.setVisibility(View.GONE);
 
-                              mIsImageAvailable = false;
+                                mConstraintContainer.setVisibility(View.GONE);
+
+                                mIsImageAvailable = false;
                                 //         MediaStore.Images.Media.getBitmap(getApplicationContext().getContentResolver(), tempImageUri);
 
                             } catch (Exception ex) {
@@ -301,6 +330,31 @@ private ImageButton mOrientation;
     @Override
     protected void onStart() {
         super.onStart();
+
+        SharedPreferences mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences mSharedResults = null;
+        mSharedResults = PreferenceManager.getDefaultSharedPreferences(this);
+
+        mImageQuality = mSharedResults.getString("PREF_UPDATE_IMAGE_QUALITY", "");
+        mImageResolution = mSharedResults.getString("PREF_UPDATE_RESOULTION", "");
+        mVideoQuality = mSharedResults.getString("PREF_VIDEO_QUALITY", "");
+        mVideResolution = mSharedResults.getString("PREF_VIDEO_RESOULTION", "");
+
+        if (mImageQuality.isEmpty() && mImageResolution.isEmpty() && mVideoQuality.isEmpty() && mVideResolution.isEmpty()) {
+
+            mImageQuality = "100";
+            mImageResolution="1920*1080";
+            mVideoQuality = "LOW";
+            mVideResolution = "1280*720";
+
+        }
+
+
+        mCameraSettingModel = new CameraSettingModel(mVideoQuality, mVideResolution, mImageQuality, mImageResolution);
+
+        Log.v("video", "image" + mVideoQuality + "\n" + mVideResolution + "\n" + mImageQuality + "\n" + mImageResolution);
+
+
         IntentFilter mIntentFilterAction = new IntentFilter();
         mIntentFilterAction.addAction("Custom_Intent");
 
@@ -337,6 +391,8 @@ private ImageButton mOrientation;
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
             Log.d("camera2", "onSurfaceTextureavailable: w: " + width + "onSurfaceTextureavailable: h: " + height);
+
+
             openCamera(width, height);
         }
 
@@ -408,6 +464,7 @@ private ImageButton mOrientation;
 // gets called when surface is already present
         if (mTextureView.isAvailable()) {
             openCamera(mTextureView.getWidth(), mTextureView.getHeight());
+            //  openCamera(640, 480);
         } else {
             // If surface is not present then below method gets called
             mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
@@ -448,24 +505,44 @@ private ImageButton mOrientation;
         @Override
         public void onReceive(Context context, Intent intent) {
 
-
+            mInternalMemoryImage.setVisibility(View.VISIBLE);
             byte[] byteArray = intent.getByteArrayExtra("image");
             displayCapturedImage(byteArray);
-mDiscardImage.setVisibility(View.VISIBLE);
-mAcceptImage.setVisibility(View.VISIBLE);
+            //     mCapturedImage
+            mDiscardImage.setVisibility(View.VISIBLE);
+            mAcceptImage.setVisibility(View.VISIBLE);
         }
     };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
+
+
         intViews();
         initIntent();
-
-
         discardImage();
         acceptImage();
+
+
+        mSettings.setOnClickListener(
+
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                        Intent mSettingIntent = new Intent(CameraActivity.this, CameraSettings.class);
+                        startActivityForResult(mSettingIntent, REQUEST_CODE_SETTINGS);
+
+
+                    }
+                }
+
+        );
+
+
         mVideoRecorder.setOnClickListener(
                 new View.OnClickListener() {
                     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -495,6 +572,8 @@ mAcceptImage.setVisibility(View.VISIBLE);
                             mConstraintContainer.setVisibility(View.VISIBLE);
                             mInternalMemoryImage.setImageBitmap(mThumbImage);
                             mInternalMemoryImage.setVisibility(View.VISIBLE);
+                            mDiscardImage.setVisibility(View.VISIBLE);
+                            mAcceptImage.setVisibility(View.VISIBLE);
 
                             mVideoFileName.toCharArray();
 
@@ -505,7 +584,6 @@ mAcceptImage.setVisibility(View.VISIBLE);
                             // when videos is recording then
                             isVideorecording = true;
                             mVideoRecorder.setImageDrawable(getResources().getDrawable(android.R.drawable.presence_video_busy));
-
                             startRecord();
                             mMediaRecorder.start();
                             mChronometer.setBase(SystemClock.elapsedRealtime());
@@ -536,8 +614,6 @@ mAcceptImage.setVisibility(View.VISIBLE);
         );
 
 
-
-
         mOrientation.setOnClickListener(
                 new View.OnClickListener() {
                     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -550,17 +626,33 @@ mAcceptImage.setVisibility(View.VISIBLE);
 
     }
 
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_SETTINGS && resultCode == RESULT_OK) {
+
+            //PREF_UPDATE_IMAGE_QUALITY
+            //  PREF_UPDATE_RESOULTION
+
+            //PREF_VIDEO_IMAGE_QUALITY
+            //PREF_VIDEO_RESOULTION
+
+
+        }
+
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void toggleCameraDisplayOrientation() {
 
-        if(mCameraId.equals(mICameraFacing.getBackCameraId())){
+        if (mCameraId.equals(mICameraFacing.getBackCameraId())) {
             mCameraId = mICameraFacing.getFrontCameraId();
             mICameraFacing.setCameraFrontFacing();
             closeCamera();
             reOpenCamera();
 
-        }
-        else if(mCameraId.equals(mICameraFacing.getFrontCameraId())){
+        } else if (mCameraId.equals(mICameraFacing.getFrontCameraId())) {
             mCameraId = mICameraFacing.getBackCameraId();
             mICameraFacing.setCameraBackFacing();
             closeCamera();
@@ -571,8 +663,11 @@ mAcceptImage.setVisibility(View.VISIBLE);
     private void initIntent() {
         Boolean mPhoto = getIntent().getExtras().getBoolean("picture");
 
-        Boolean mVideo = getIntent().getExtras().getBoolean("video");
+        mVideoUpdate = getIntent().getStringExtra("fromVideothubnail");
 
+        // Boolean mVideo = getIntent().getExtras().getBoolean("video");
+
+        String isVideo = getIntent().getExtras().getString("");
         if (mPhoto != null && mPhoto) {
 
             mCamera.setVisibility(View.VISIBLE);
@@ -656,6 +751,7 @@ mAcceptImage.setVisibility(View.VISIBLE);
                 // cameraId is whether is front camera or a back camera details
                 //     cameradevice statecallback --> just used for preview
                 manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
+                //   manager
 
 
             } catch (CameraAccessException e) {
@@ -844,15 +940,25 @@ mAcceptImage.setVisibility(View.VISIBLE);
      */
     @SuppressWarnings("SuspiciousNameCombination")
     private void setUpCameraOutputs(int width, int height) {
+
+
         Activity activity = CameraActivity.this;
 
+        //  VideoProfile.CameraCapabilities mCameraCapabilities = new VideoProfile.CameraCapabilities(width, height);
+        //  mCameraCapabilities.
+
+
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+
         try {
             mICameraFacing = this;
-// for initial case front and back facing camera will be false so it will find the cameraID
+// for initial case front and back facing camera  will be false so findCameraIds returns whether it is front or back facing camera
             if (!(mICameraFacing.isCameraBackFacing()) && !(mICameraFacing.isCameraFrontFacing())) {
                 findCameraIds();
             }
+
+            // gets the characterstics of front or back camera
+            // mCmaeraId represent front or back camera which is assigned in findcameraIds method!
             CameraCharacteristics characteristics
                     = manager.getCameraCharacteristics(mCameraId);
 
@@ -861,12 +967,24 @@ mAcceptImage.setVisibility(View.VISIBLE);
 
             StreamConfigurationMap map = characteristics.get(
                     CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            assert map != null;
+            VideoFrameSize.getInstance().setmVideoFrameSize(Arrays.asList(map.getHighSpeedVideoSizes()));
 
+            map.getHighSpeedVideoFpsRanges();
+
+
+            // I should size object here
+            //map.getHighSpeedVideoFpsRangesFor()
+
+            // map.getHighSpeedVideoSizesFor()  // should pass a range of fps(frames per second)
+
+            assert map != null;
             Size largest = null;
             float screenAspectRatio = (float) SCREEN_WIDTH / (float) SCREEN_HEIGHT;
             List<Size> sizes = new ArrayList<>();
             List<Size> sizesBasedOnScreenAspectRatioIfAny = new ArrayList<>();
+
+
+            // map.getOutSizes(ImageFormat.JPEG) gives me the list of available resolutions in the camera
             for (Size size : Arrays.asList(map.getOutputSizes(ImageFormat.JPEG))) {
 
                 float temp = (float) size.getWidth() / (float) size.getHeight();
@@ -891,11 +1009,17 @@ mAcceptImage.setVisibility(View.VISIBLE);
                         sizes,
                         new Utility.CompareSizesByArea());
 
+                String[] mArrayOfRes = mImageResolution.split("[*]+");
+                int mWidth = Integer.parseInt(mArrayOfRes[0]);
+                int mHeight = Integer.parseInt(mArrayOfRes[1]);
 
-                mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(), ImageFormat.JPEG, 2);
+                mImageReader = ImageReader.newInstance(mWidth, mHeight, ImageFormat.JPEG, 2);
+                //  mImageReader = ImageReader.newInstance(40, 20, ImageFormat.JPEG, 2);
+
                 mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);
                 Log.d(TAG, "setUpCameraOutputs: largest width: " + largest.getWidth());
                 Log.d(TAG, "setUpCameraOutputs: largest height: " + largest.getHeight());
+
 
 
             } else if (sizes.size() > 0) {
@@ -905,6 +1029,9 @@ mAcceptImage.setVisibility(View.VISIBLE);
 
 
                 mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(), ImageFormat.JPEG, 2);
+
+                //    mImageReader = ImageReader.newInstance(40, 20, ImageFormat.JPEG, 2);
+
                 mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);
                 Log.d(TAG, "setUpCameraOutputs: largest width: " + largest.getWidth());
                 Log.d(TAG, "setUpCameraOutputs: largest height: " + largest.getHeight());
@@ -970,6 +1097,20 @@ mAcceptImage.setVisibility(View.VISIBLE);
 
                         rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth, maxPreviewHeight, largest
                 );
+               String [] mVideoRes = mVideResolution.split("[*]+");
+
+               int mWidth = Integer.parseInt( mVideoRes[0]);
+
+               int mHeight = Integer.parseInt(mVideoRes[1]);
+
+
+                Size mResultEq =  Utility.chooseOptimalSize(map.getHighSpeedVideoSizes(), rotatedPreviewWidth, rotatedPreviewHeight,
+
+                       mWidth , mHeight,largest);
+
+
+                mResultEq.getHeight();
+
             }
 
 
@@ -1013,7 +1154,6 @@ mAcceptImage.setVisibility(View.VISIBLE);
                 if (cameraId == null) continue;
                 CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
                 int facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-
 
 
                 if (facing == CameraCharacteristics.LENS_FACING_BACK) {
@@ -1164,7 +1304,6 @@ mAcceptImage.setVisibility(View.VISIBLE);
             // before unlocking focus making views visible
 
 
-
             CameraCaptureSession.CaptureCallback CaptureCallback
                     = new CameraCaptureSession.CaptureCallback() {
 
@@ -1295,6 +1434,7 @@ mAcceptImage.setVisibility(View.VISIBLE);
         }
     }
 
+
     private void startRecord() {
 
         try {
@@ -1345,12 +1485,42 @@ mAcceptImage.setVisibility(View.VISIBLE);
         public void onImageAvailable(ImageReader reader) {
 
             if (!mIsImageAvailable) {
-                mCapturedImage = reader.acquireLatestImage();
 
-                Log.d(TAG, "onImageAvailable: captured image width: " + mCapturedImage.getWidth());
-                Log.d(TAG, "onImageAvailable: captured image height: " + mCapturedImage.getHeight());
+                mCapturedImage = reader.acquireNextImage();
 
-                saveTempImageToStorage();
+
+
+
+
+                /*
+convert image to ByteBuffer,
+get the bytes array
+and then get bitmap using decodeByteArray
+                 */
+                /*
+                ByteBuffer buffer = mCapturedImage.getPlanes()[0].getBuffer();
+                byte[] bytes = new byte[buffer.remaining()];
+                buffer.get(bytes);
+                Bitmap myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, null);*/
+
+                if (mCapturedImage != null) {
+                    Log.d(TAG, "onImageAvailable: captured image width: " + mCapturedImage.getWidth());
+                    Log.d(TAG, "onImageAvailable: captured image height: " + mCapturedImage.getHeight());
+
+                    String[] mArrayOfRes = mImageResolution.split("[*]+");
+
+                    int width = Integer.parseInt(mArrayOfRes[0]);
+                    int height = Integer.parseInt(mArrayOfRes[1]);
+
+
+                    ReducePixelImage mReducedPixelImage = new ReducePixelImage(mCapturedImage, width, height, CameraActivity.this);
+
+
+                    mBackgroundHandler.post(mReducedPixelImage);
+                    // Before saving picture to the storage I want to reduce the pixel s
+                    saveTempImageToStorage();
+
+                }
             }
             // when image is available in the image reader then this gets triggered..
 
@@ -1359,38 +1529,7 @@ mAcceptImage.setVisibility(View.VISIBLE);
 
     private void saveTempImageToStorage() {
 
-        Log.d(TAG, "saveTempImageToStorage: saving temp image to disk.");
-        final ICallback callback = new ICallback() {
-            @Override
-            public void done(Exception e) {
-                if (e == null) {
-                    Log.d(TAG, "onImageSavedCallback: image saved!");
-
-                    mIsImageAvailable = true;
-
-
-                    Intent i = new Intent(CameraActivity.this, ReadImage.class);
-                    if (fileName != null) {
-                        i.putExtra("fileNameOfImage", fileName);
-                    } else {
-                        Toast.makeText(CameraActivity.this, "image not available in the storage", Toast.LENGTH_LONG);
-                    }
-                    startService(i);
-                    mCapturedImage.close();
-
-                } else {
-                    Log.d(TAG, "onImageSavedCallback: error saving image: " + e.getMessage());
-                    showSnackBar("Error displaying image", Snackbar.LENGTH_SHORT);
-                }
-            }
-        };
-
-        ImageSaver imageSaver = new ImageSaver(
-                mCapturedImage,
-                CameraActivity.this.getExternalFilesDir(null),
-                callback, this
-        );
-        mBackgroundHandler.post(imageSaver);
+// code is moved to interface callback that is created in reducePixelImage
     }
 
 
@@ -1418,11 +1557,10 @@ mAcceptImage.setVisibility(View.VISIBLE);
     public boolean isCameraFrontFacing() {
 
 
-        if(mCameraOrientation.equals(CAMERA_POSITION_FRONT)){
+        if (mCameraOrientation.equals(CAMERA_POSITION_FRONT)) {
 
             return true;
-        }
-else {
+        } else {
             return false;
         }
 
@@ -1432,13 +1570,12 @@ else {
     @Override
     public boolean isCameraBackFacing() {
 
-if(mCameraOrientation.equals(CAMERA_POSITION_BACK)){
-    return true;
-}
-else {
+        if (mCameraOrientation.equals(CAMERA_POSITION_BACK)) {
+            return true;
+        } else {
 
-    return false;
-}
+            return false;
+        }
 
 
     }
@@ -1455,12 +1592,12 @@ else {
 
     @Override
     public void setCameraFrontFacing() {
-mCameraOrientation =CAMERA_POSITION_FRONT;
+        mCameraOrientation = CAMERA_POSITION_FRONT;
     }
 
     @Override
     public void setCameraBackFacing() {
-mCameraOrientation = CAMERA_POSITION_BACK;
+        mCameraOrientation = CAMERA_POSITION_BACK;
     }
 
     @Override
@@ -1471,6 +1608,48 @@ mCameraOrientation = CAMERA_POSITION_BACK;
     @Override
     public String getFrontCameraId() {
         return CAMERA_POSITION_FRONT;
+    }
+
+    @Override
+    public void setReducedBitmap(byte[] bytes) {
+//mBitmap.getWidth();
+//mBitmap.getHeight();
+        Log.d(TAG, "saveTempImageToStorage: saving temp image to disk.");
+        final ICallback callback = new ICallback() {
+            @Override
+            public void done(Exception e) {
+                if (e == null) {
+                    Log.d(TAG, "onImageSavedCallback: image saved!");
+
+                    mIsImageAvailable = true;
+
+
+                    Intent i = new Intent(CameraActivity.this, ReadImage.class);
+                    if (fileName != null) {
+                        i.putExtra("fileNameOfImage", fileName);
+                    } else {
+                        Toast.makeText(CameraActivity.this, "image not available in the storage", Toast.LENGTH_LONG);
+                    }
+                    startService(i);
+                    if (mCapturedImage != null) {
+                        mCapturedImage.close();
+                    }
+
+                } else {
+                    Log.d(TAG, "onImageSavedCallback: error saving image: " + e.getMessage());
+                    showSnackBar("Error displaying image", Snackbar.LENGTH_SHORT);
+                }
+            }
+        };
+
+
+        ImageSaver imageSaver = new ImageSaver(
+                bytes,
+                CameraActivity.this.getExternalFilesDir(null),
+                callback, this, mImageQuality
+        );
+        mBackgroundHandler.post(imageSaver);
+// pass this bitmap
     }
 /*
     @Override
@@ -1500,26 +1679,35 @@ closeCamera();
         /**
          * Original image that was captured
          */
-        private Image mImage;
+        private byte[] mImage;
 
         private ICallback mCallback;
 
-        ImageSaver(Image image, File file, ICallback callback, Context mContext) {
+        private String mImageQuality;
+
+        ImageSaver(byte[] image, File file, ICallback callback, Context mContext, String mImageQuality) {
             mImage = image;
             mFile = file;
             mCallback = callback;
             this.mContext = mContext;
+
+            this.mImageQuality = mImageQuality;
         }
 
         @Override
         public void run() {
-
             if (mImage != null) {
-                ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
-                byte[] bytes = new byte[buffer.remaining()];
-                buffer.get(bytes);
+
+
+                //  ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
+                //byte[] bytes = new byte[buffer.remaining()];
+                //buffer.get(bytes);
                 FileOutputStream output = null;
                 try {
+
+                    Bitmap mBitmap = BitmapFactory.decodeByteArray(mImage, 0, mImage.length, null);
+
+
 
                     /*x
                     formatter = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
@@ -1535,12 +1723,16 @@ closeCamera();
 
                     // This add images to the galleryaddImageToGallery(file.getAbsolutePath(), mContext);
                     output = new FileOutputStream(file);
-                    output.write(bytes);
+                    int mImageQualityPercentage = Integer.parseInt(mImageQuality);
+
+                    mBitmap.compress(Bitmap.CompressFormat.JPEG, mImageQualityPercentage, output);
+
+                    //  output.write(mImage);
                 } catch (IOException e) {
                     e.printStackTrace();
                     mCallback.done(e);
                 } finally {
-                    mImage.close();
+                    //   mImage.close();
                     if (null != output) {
                         try {
                             output.flush();
@@ -1559,9 +1751,9 @@ closeCamera();
 
 
     private void showStillshotContainer() {
-
-        mConstraintContainer.setVisibility(View.VISIBLE);
         closeCamera();
+        mConstraintContainer.setVisibility(View.VISIBLE);
+
 
     }
 
@@ -1582,6 +1774,8 @@ closeCamera();
             }
             if (null != mCameraDevice) {
                 mCameraDevice.close();
+                //    mCameraDevice.
+
                 mCameraDevice = null;
             }
             if (null != mImageReader) {
@@ -1604,9 +1798,7 @@ closeCamera();
 
                         RequestOptions options = new RequestOptions()
                                 .diskCacheStrategy(DiskCacheStrategy.NONE)
-                                .skipMemoryCache(true)
-                                .centerCrop();
-
+                                .skipMemoryCache(true);
 
                         Glide.with(activity)
                                 .setDefaultRequestOptions(options)
@@ -1684,37 +1876,101 @@ closeCamera();
         }
     }
 
-
     private void setUpMediaRecorder() throws IOException {
 //  CameraActivity.this.getExternalFilesDir(null)
         //   getExternalFilesDir(null).getAbsolutePath();
 
         File file = new File(getExternalFilesDir(null), "temp_video.mp4");
         mVideoFileName = file.getAbsolutePath();
-
+        mMediaRecorder.setOrientationHint(90);
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        // mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+
+//
+
+        //  CamcorderProfile.QUALITY_480P;
+
+//CamcorderProfile.QUALITY_480P;
+
+//CamcorderProfile.QUALITY_2160P;
+
+        //CamcorderProfile.QUALITY_2160P;
+
+
+//640,480
+        if (mVideoQuality.equals("HIGH")) {
+            if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH)) {
+                Log.v("apprently", "result is");
+                CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH);
+                profile.fileFormat = MediaRecorder.OutputFormat.MPEG_4;
+
+                String[] resolutions = mVideResolution.split("[*]+");
+
+                if (mCameraId.equals(mICameraFacing.getBackCameraId())) {
+                    profile.videoFrameWidth = Integer.parseInt(resolutions[0]);
+                    profile.videoFrameHeight = Integer.parseInt(resolutions[1]);
+
+
+                    // profile
+                } else {
+                    mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+
+                    // mMediaRecorder.setOrientationHint(270);
+                }
+
+
+                profile.videoCodec = MediaRecorder.VideoEncoder.H264;
+                profile.audioCodec = MediaRecorder.AudioEncoder.AAC;
+                mMediaRecorder.setProfile(profile);
+            }
+        } else if (mVideoQuality.equals("LOW")) {
+            if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_LOW)) {
+
+                CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_LOW);
+
+                //input.split("[\\s@&.?$+-]+");
+                String[] resolutions = mVideResolution.split("[*]+");
+                if (mCameraId.equals(mICameraFacing.getBackCameraId())) {
+                    profile.videoFrameWidth = Integer.parseInt(resolutions[0]);
+                    profile.videoFrameHeight = Integer.parseInt(resolutions[1]);
+                }
+                profile.fileFormat = MediaRecorder.OutputFormat.MPEG_4;
+                profile.videoCodec = MediaRecorder.VideoEncoder.H264;
+                mMediaRecorder.setProfile(profile);
+
+            } else {
+                mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+                //    mMediaRecorder.setOrientationHint(270);
+
+
+            }
+
+
+        }
+
 
         mMediaRecorder.setOutputFile(file.getAbsolutePath());
         mMediaRecorder.setVideoEncodingBitRate(1000000);
         mMediaRecorder.setVideoFrameRate(30);
-        mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
-        mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+      //  mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
 
-        mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        //     mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        //    mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
         // mMediaRecorder.setOrientationHint();
+
+    if(mCameraId.equals(mICameraFacing.getFrontCameraId()))
+        mMediaRecorder.setOrientationHint(270);
+
+
         mMediaRecorder.prepare();
 
     }
 
 
     private void intViews() {
-
 // orientation
-
         mOrientation = findViewById(R.id.switch_orientation);
-
         //discard_image
         mDiscardImage = findViewById(R.id.discard_image);
         mAcceptImage = findViewById(R.id.accept_image);
@@ -1722,9 +1978,14 @@ closeCamera();
         mConstraintContainer = findViewById(R.id.image_container);
         mInternalMemoryImage = findViewById(R.id.mCapturedBitmap);
 
+
+        mPrimayContainerImageView = findViewById(R.id.primary_container_image);
+
         mTextureView = findViewById(R.id.texture);
         mCamera = findViewById(R.id.camera);
         mChronometer = findViewById(R.id.mChronometer);
+
+        mSettings = findViewById(R.id.settings);
 
     }
 

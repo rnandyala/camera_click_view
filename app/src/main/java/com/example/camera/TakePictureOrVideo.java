@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
@@ -12,6 +13,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.Group;
@@ -54,6 +56,23 @@ public class TakePictureOrVideo extends AppCompatActivity {
 
 
     @Override
+    public void onSaveInstanceState(@NonNull Bundle outState, @NonNull PersistableBundle outPersistentState) {
+        super.onSaveInstanceState(outState, outPersistentState);
+
+        outPersistentState.putString("fromVideothubnail", String.valueOf(isFromVideo));
+    }
+
+
+    @Override
+    public void onRestoreInstanceState(@Nullable Bundle savedInstanceState, @Nullable PersistableBundle persistentState) {
+        super.onRestoreInstanceState(savedInstanceState, persistentState);
+
+        String videoState = persistentState.getString("fromVideothubnail", "");
+
+        isFromVideo = Boolean.getBoolean(videoState);
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (REQUEST_CODE_CAMERA == requestCode && resultCode == RESULT_OK) {
@@ -77,6 +96,9 @@ public class TakePictureOrVideo extends AppCompatActivity {
             fileName = data.getStringExtra("fileName");
 
             fileName.isEmpty();
+
+            isFromVideo = Boolean.parseBoolean(data.getStringExtra("fromVideothubnail"));
+
 
             //  mFile = new File(TakePictureOrVideo.this.getExternalFilesDir(null), fileName);
 
@@ -159,10 +181,19 @@ public class TakePictureOrVideo extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
 
+                /*
+                        if (mThumbImage != null) {
+                            Intent mThumbImageIntent = new Intent();
+                            mThumbImageIntent.putExtra("fileName", fileName);
+                            setResult(RESULT_OK, mThumbImageIntent);
+                            TakePictureOrVideo.this.finish();
+                        } else {
+                            Toast.makeText(TakePictureOrVideo.this, "currently thumbnail is unavailable", Toast.LENGTH_LONG).show();
+                        }*/
 
                         if (isTakeVideo && isFromVideo) {
                             Intent mUpdateVideo = new Intent();
-                            mUpdateVideo.putExtra("mVideoFileName", fileName);
+                            mUpdateVideo.putExtra("fileName", fileName);
                             setResult(RESULT_OK, mUpdateVideo);
                             finish();
                         } else if (isTakePhoto && isFromImage) {
@@ -244,9 +275,11 @@ public class TakePictureOrVideo extends AppCompatActivity {
                         isTakeVideo = true;
                         Intent mTakeVideo = new Intent(TakePictureOrVideo.this, CameraActivity.class);
 
-                        mTakeVideo.putExtra("video", true);
-
+             //           mTakeVideo.putExtra("video", true);
+                        mTakeVideo.putExtra("fromVideothubnail", String.valueOf(isFromVideo));
                         startActivityForResult(mTakeVideo, REQUEST_CODE_VIDEO);
+
+           //         finish();
                     }
                 });
 
@@ -302,8 +335,9 @@ public class TakePictureOrVideo extends AppCompatActivity {
 
     // file name for video need to be sent from FormAction
     private void initBundle() {
+       // isFromVideo =  Boolean.parseBoolean(getIntent().getStringExtra("fromVideothubnail"));
 
-
+      //  String mFromCameraPreview = getIntent().getStringExtra("fromVideothubnail");
         int camera = getIntent().getIntExtra("camera", 0);
         int video = getIntent().getIntExtra("video", 0);
 
@@ -318,10 +352,19 @@ public class TakePictureOrVideo extends AppCompatActivity {
         // get file name and load the thumbnail
 
         String mVideoFileName = getIntent().getStringExtra(FormAction.VIDEO);
-        boolean isFromVideo = getIntent().getBooleanExtra("comingFromVideo", false);
+         isFromVideo = getIntent().getBooleanExtra("comingFromVideo", false);
+
+        /*
+        if(mFromCameraPreview != null){
+          isFromVideo =   Boolean.getBoolean(mFromCameraPreview);
+        }*/
+
+        //"fromVideothubnail"
+
 
 
         setVideoData(isFromVideo, mVideoFileName);
+
 
 
         if (camera == 1) {
@@ -339,7 +382,6 @@ public class TakePictureOrVideo extends AppCompatActivity {
             mFirstVisit.setVisibility(View.VISIBLE);
             mUpdateVisit.setVisibility(View.GONE);
         }
-
 
 
         if (mFileName != null) {
@@ -381,9 +423,6 @@ public class TakePictureOrVideo extends AppCompatActivity {
         mFirstVisit.setVisibility(View.GONE);
         mUpdateVisit.setVisibility(View.VISIBLE);
     }
-
-
-
 
 
     private void setmThumbVideo(Bitmap mThumbImage) {

@@ -225,7 +225,8 @@ file name, image position,
                     mArrayOFImages[i].setVisibility(View.VISIBLE);
                 }
             } else {
-                Log.v("FileName", "isMissing & current listOfFileNames size is" + SingletonFileNameLibrary.getInstance().getListOfFileName().size());
+                Log.v("FileName", "isMissing & current listOfFileNames size is"
+                        + SingletonFileNameLibrary.getInstance().getListOfFileName().size());
             }
         }
 
