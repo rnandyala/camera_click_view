@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 
 
 interface IBitmapConnector{
-    void setReducedBitmap(byte [] bytes);
+    void setReducedBitmap(Image mCapturedImage);
 }
 
 public class ReducePixelImage implements Runnable {
@@ -39,6 +39,8 @@ public class ReducePixelImage implements Runnable {
 
 
         try {
+
+      /*
             ByteBuffer mBuffer = null;
             mBuffer = mCapturedImage.getPlanes()[0].getBuffer();
             byte[] bytes = new byte[mBuffer.remaining()];
@@ -52,7 +54,9 @@ public class ReducePixelImage implements Runnable {
 
             // mCapturedImage.close();
 
-            mIBitmapConnector.setReducedBitmap(bytes);
+*/
+
+            mIBitmapConnector.setReducedBitmap(mCapturedImage);
         }
         catch (Exception ex){
             ex.printStackTrace();

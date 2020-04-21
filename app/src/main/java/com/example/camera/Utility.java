@@ -10,6 +10,28 @@ import java.util.List;
 public class Utility {
 
 
+    static Size getApproriateVideoSize(List<Size> mHighResoutionVideoSizes, int width, int height) {
+
+
+        Size mVideoSize = new Size(width, height);
+
+        if (mHighResoutionVideoSizes.contains(mVideoSize)) {
+            return mVideoSize;
+        } else {
+            for (int i = 0; i < mHighResoutionVideoSizes.size(); i++) {
+                Size mHighResolutionVideoSizes = mHighResoutionVideoSizes.get(i);
+                // so first approiate size is set as video size
+                if (mHighResolutionVideoSizes.getWidth() - mVideoSize.getWidth() < 150
+                        || mVideoSize.getWidth() - mHighResolutionVideoSizes.getWidth() < 150) {
+                    mVideoSize = mHighResolutionVideoSizes;
+                }
+            }
+        }
+
+        return mVideoSize;
+    }
+
+
     /**
      * Compares two {@code Size}s based on their areas.
      */
@@ -30,6 +52,7 @@ public class Utility {
 
 // mapping textureview size with camera sizes
     // if not choose near by matching value
+
     /**
      * Given {@code choices} of {@code Size}s supported by a camera, choose the smallest one that
      * is at least as large as the respective texture view size, and that is at most as large as the

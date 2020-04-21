@@ -1,8 +1,12 @@
 package com.example.camera;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
 import android.media.ThumbnailUtils;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -54,18 +58,42 @@ public class FormAction extends AppCompatActivity implements View.OnClickListene
     private static final int RequestThumbnailVideo = 006;
 
 
+    public boolean checkHardwareLevel() {
+        CameraManager mCameramanager = (CameraManager) FormAction.this.getSystemService(Context.CAMERA_SERVICE);
+
+        try {
+            for (String mCameraId : mCameramanager.getCameraIdList()) {
+                CameraCharacteristics mCameraCharacteristics = mCameramanager.getCameraCharacteristics(mCameraId);
+                Object mHardwareLevel = mCameraCharacteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
+
+                return mHardwareLevel.toString().contains("2");
+            }
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+    //CameraCharacteristics mCharacterstics = mCameramanager.getCameraCharacteristics()
+
     // take user to video screen or photo screen or
     // default case is for all five photo imageview
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.take_picture:
+
                 // If user tries to take more than 5 photos then do not allow the user
                 if (isCameraPicAvailable) {
-                    Intent i = new Intent(FormAction.this, TakePictureOrVideo.class);
-                    // This is used to determine whether it is a camera or  video
-                    i.putExtra(CAMERA, CLICK_TYPE1);
-                    startActivityForResult(i, RequestThumbnailPicture);
+
+                    if (checkHardwareLevel()) {
+                        Toast.makeText(FormAction.this, "CAMERA2 is unavilable", Toast.LENGTH_LONG);
+                    } else {
+
+                        Intent i = new Intent(FormAction.this, TakePictureOrVideo.class);
+                        // This is used to determine whether it is a camera or  video
+                        i.putExtra(CAMERA, CLICK_TYPE1);
+                        startActivityForResult(i, RequestThumbnailPicture);
+                    }
                 } else {
                     Toast.makeText(FormAction.this, "total count reached", Toast.LENGTH_SHORT);
                 }
@@ -161,7 +189,7 @@ public class FormAction extends AppCompatActivity implements View.OnClickListene
                         // adding file name twice as well as  position
                         mArrayOFImages[i].setTag(R.string.tag_name, mListOfFileNames.get(i));
                         mArrayOFImages[i].setTag(R.string.image, i);
-                    //    mArrayOFImages[i].setTag(R.string.filename, mFileName);
+                        //    mArrayOFImages[i].setTag(R.string.filename, mFileName);
                         mArrayOFImages[i].setOnClickListener(this);
                         mArrayOFImages[i].setVisibility(View.VISIBLE);
                     }
@@ -220,7 +248,7 @@ file name, image position,
                     mArrayOFImages[i].setImageBitmap(mBitMapImage);
                     mArrayOFImages[i].setTag(R.string.tag_name, mListOfFileNames.get(i));
                     mArrayOFImages[i].setTag(R.string.image, i);
-               //     mArrayOFImages[i].setTag(R.string.filename, mFileName);
+                    //     mArrayOFImages[i].setTag(R.string.filename, mFileName);
                     mArrayOFImages[i].setOnClickListener(this);
                     mArrayOFImages[i].setVisibility(View.VISIBLE);
                 }
@@ -252,6 +280,7 @@ file name, image position,
         // these two represent icons
         mTakePicture = findViewById(R.id.take_picture);
         mTakeVideo = findViewById(R.id.take_video);
+
 
         //farmerDetailsvideo1
         //mFarmerDetailsVideo =   findViewById(R.id.farmerDetailsvideo1);

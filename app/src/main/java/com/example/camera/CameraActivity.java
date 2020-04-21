@@ -64,6 +64,7 @@ import androidx.preference.PreferenceManager;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.util.Util;
 import com.example.camera.cameraInterface.ICameraFacing;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -84,7 +85,7 @@ import static android.widget.Toast.LENGTH_SHORT;
 
 public class CameraActivity extends AppCompatActivity implements ICameraFacing, IBitmapConnector {
 
-
+    List<Size> mHighSpeedVideoresolutions;
     String mVideoUpdate;
 
     String mVideoQuality;
@@ -343,7 +344,7 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
         if (mImageQuality.isEmpty() && mImageResolution.isEmpty() && mVideoQuality.isEmpty() && mVideResolution.isEmpty()) {
 
             mImageQuality = "100";
-            mImageResolution="1920*1080";
+            mImageResolution = "1920*1080";
             mVideoQuality = "LOW";
             mVideResolution = "1280*720";
 
@@ -967,9 +968,10 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
 
             StreamConfigurationMap map = characteristics.get(
                     CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            VideoFrameSize.getInstance().setmVideoFrameSize(Arrays.asList(map.getHighSpeedVideoSizes()));
 
-            map.getHighSpeedVideoFpsRanges();
+            mHighSpeedVideoresolutions = Arrays.asList(map.getHighSpeedVideoSizes());
+
+            //     map.getHighSpeedVideoFpsRanges();
 
 
             // I should size object here
@@ -1021,20 +1023,21 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
                 Log.d(TAG, "setUpCameraOutputs: largest height: " + largest.getHeight());
 
 
-
             } else if (sizes.size() > 0) {
                 largest = Collections.max(
                         sizes,
                         new Utility.CompareSizesByArea());
+                String[] mArrayOfRes = mImageResolution.split("[*]+");
+                int mWidth = Integer.parseInt(mArrayOfRes[0]);
+                int mHeight = Integer.parseInt(mArrayOfRes[1]);
 
-
-                mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(), ImageFormat.JPEG, 2);
+                mImageReader = ImageReader.newInstance(mWidth, mHeight, ImageFormat.JPEG, 2);
 
                 //    mImageReader = ImageReader.newInstance(40, 20, ImageFormat.JPEG, 2);
 
                 mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);
                 Log.d(TAG, "setUpCameraOutputs: largest width: " + largest.getWidth());
-                Log.d(TAG, "setUpCameraOutputs: largest height: " + largest.getHeight());
+                Log.d(TAG, "setUpCameraOut   puts: largest height: " + largest.getHeight());
             }
 
 
@@ -1097,19 +1100,15 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
 
                         rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth, maxPreviewHeight, largest
                 );
-               String [] mVideoRes = mVideResolution.split("[*]+");
+                String[] mVideoRes = mVideResolution.split("[*]+");
 
-               int mWidth = Integer.parseInt( mVideoRes[0]);
+                int mWidth = Integer.parseInt(mVideoRes[0]);
 
-               int mHeight = Integer.parseInt(mVideoRes[1]);
-
-
-                Size mResultEq =  Utility.chooseOptimalSize(map.getHighSpeedVideoSizes(), rotatedPreviewWidth, rotatedPreviewHeight,
-
-                       mWidth , mHeight,largest);
+                int mHeight = Integer.parseInt(mVideoRes[1]);
 
 
-                mResultEq.getHeight();
+                List<Size> mArraySize = Arrays.asList(map.getHighSpeedVideoSizes());
+
 
             }
 
@@ -1611,9 +1610,11 @@ and then get bitmap using decodeByteArray
     }
 
     @Override
-    public void setReducedBitmap(byte[] bytes) {
+    public void setReducedBitmap(Image mCapturedImage) {
 //mBitmap.getWidth();
 //mBitmap.getHeight();
+
+        this.mCapturedImage = mCapturedImage;
         Log.d(TAG, "saveTempImageToStorage: saving temp image to disk.");
         final ICallback callback = new ICallback() {
             @Override
@@ -1644,7 +1645,8 @@ and then get bitmap using decodeByteArray
 
 
         ImageSaver imageSaver = new ImageSaver(
-                bytes,
+                mCapturedImage
+                ,
                 CameraActivity.this.getExternalFilesDir(null),
                 callback, this, mImageQuality
         );
@@ -1679,33 +1681,32 @@ closeCamera();
         /**
          * Original image that was captured
          */
-        private byte[] mImage;
+        private Image mCapturedImage;
 
         private ICallback mCallback;
 
         private String mImageQuality;
 
-        ImageSaver(byte[] image, File file, ICallback callback, Context mContext, String mImageQuality) {
-            mImage = image;
+        ImageSaver(Image mCapturedImage, File file, ICallback callback, Context mContext, String mImageQuality) {
             mFile = file;
             mCallback = callback;
             this.mContext = mContext;
-
+            this.mCapturedImage = mCapturedImage;
             this.mImageQuality = mImageQuality;
         }
 
         @Override
         public void run() {
-            if (mImage != null) {
+            if (mCapturedImage != null) {
 
 
-                //  ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
-                //byte[] bytes = new byte[buffer.remaining()];
-                //buffer.get(bytes);
+                ByteBuffer buffer = mCapturedImage.getPlanes()[0].getBuffer();
+                byte[] bytes = new byte[buffer.remaining()];
+                buffer.get(bytes);
                 FileOutputStream output = null;
                 try {
 
-                    Bitmap mBitmap = BitmapFactory.decodeByteArray(mImage, 0, mImage.length, null);
+                    Bitmap mBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, null);
 
 
 
@@ -1908,14 +1909,23 @@ closeCamera();
                 String[] resolutions = mVideResolution.split("[*]+");
 
                 if (mCameraId.equals(mICameraFacing.getBackCameraId())) {
-                    profile.videoFrameWidth = Integer.parseInt(resolutions[0]);
-                    profile.videoFrameHeight = Integer.parseInt(resolutions[1]);
+
+
+Size mResultVideoResolution =                     Utility.getApproriateVideoSize(mHighSpeedVideoresolutions,
+                                    Integer.parseInt(resolutions[0]), Integer.parseInt(resolutions[1]));
+
+
+                    // Utility.getApproriateVideoSize(m)
+                    profile.videoFrameWidth = mResultVideoResolution.getWidth();
+                    profile.videoFrameHeight = mResultVideoResolution.getHeight();
 
 
                     // profile
                 } else {
-                    mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+             //       mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
 
+                    profile.videoFrameWidth = mVideoSize.getWidth();
+                    profile.videoFrameHeight = mVideoSize.getHeight();
                     // mMediaRecorder.setOrientationHint(270);
                 }
 
@@ -1932,17 +1942,27 @@ closeCamera();
                 //input.split("[\\s@&.?$+-]+");
                 String[] resolutions = mVideResolution.split("[*]+");
                 if (mCameraId.equals(mICameraFacing.getBackCameraId())) {
-                    profile.videoFrameWidth = Integer.parseInt(resolutions[0]);
-                    profile.videoFrameHeight = Integer.parseInt(resolutions[1]);
+                    Size mResultVideoResolution =                     Utility.getApproriateVideoSize(mHighSpeedVideoresolutions,
+                            Integer.parseInt(resolutions[0]), Integer.parseInt(resolutions[1]));
+
+                    profile.videoFrameWidth = mResultVideoResolution.getWidth();
+                    profile.videoFrameHeight = mResultVideoResolution.getHeight();
                 }
+                else {
+                  //  mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+
+
+                    profile.videoFrameWidth = mVideoSize.getWidth();
+                    profile.videoFrameHeight = mVideoSize.getHeight();
+                    //    mMediaRecorder.setOrientationHint(270);
+
+
+                }
+
+
                 profile.fileFormat = MediaRecorder.OutputFormat.MPEG_4;
                 profile.videoCodec = MediaRecorder.VideoEncoder.H264;
                 mMediaRecorder.setProfile(profile);
-
-            } else {
-                mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
-                //    mMediaRecorder.setOrientationHint(270);
-
 
             }
 
@@ -1953,14 +1973,14 @@ closeCamera();
         mMediaRecorder.setOutputFile(file.getAbsolutePath());
         mMediaRecorder.setVideoEncodingBitRate(1000000);
         mMediaRecorder.setVideoFrameRate(30);
-      //  mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+        //  mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
 
         //     mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
         //    mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
         // mMediaRecorder.setOrientationHint();
 
-    if(mCameraId.equals(mICameraFacing.getFrontCameraId()))
-        mMediaRecorder.setOrientationHint(270);
+        if (mCameraId.equals(mICameraFacing.getFrontCameraId()))
+            mMediaRecorder.setOrientationHint(270);
 
 
         mMediaRecorder.prepare();
