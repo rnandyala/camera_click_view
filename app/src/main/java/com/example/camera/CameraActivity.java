@@ -1911,8 +1911,8 @@ closeCamera();
                 if (mCameraId.equals(mICameraFacing.getBackCameraId())) {
 
 
-Size mResultVideoResolution =                     Utility.getApproriateVideoSize(mHighSpeedVideoresolutions,
-                                    Integer.parseInt(resolutions[0]), Integer.parseInt(resolutions[1]));
+                    Size mResultVideoResolution = Utility.getApproriateVideoSize(mHighSpeedVideoresolutions,
+                            Integer.parseInt(resolutions[0]), Integer.parseInt(resolutions[1]));
 
 
                     // Utility.getApproriateVideoSize(m)
@@ -1922,7 +1922,7 @@ Size mResultVideoResolution =                     Utility.getApproriateVideoSize
 
                     // profile
                 } else {
-             //       mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+                    //       mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
 
                     profile.videoFrameWidth = mVideoSize.getWidth();
                     profile.videoFrameHeight = mVideoSize.getHeight();
@@ -1942,14 +1942,13 @@ Size mResultVideoResolution =                     Utility.getApproriateVideoSize
                 //input.split("[\\s@&.?$+-]+");
                 String[] resolutions = mVideResolution.split("[*]+");
                 if (mCameraId.equals(mICameraFacing.getBackCameraId())) {
-                    Size mResultVideoResolution =                     Utility.getApproriateVideoSize(mHighSpeedVideoresolutions,
+                    Size mResultVideoResolution = Utility.getApproriateVideoSize(mHighSpeedVideoresolutions,
                             Integer.parseInt(resolutions[0]), Integer.parseInt(resolutions[1]));
 
                     profile.videoFrameWidth = mResultVideoResolution.getWidth();
                     profile.videoFrameHeight = mResultVideoResolution.getHeight();
-                }
-                else {
-                  //  mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+                } else {
+                    //  mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
 
 
                     profile.videoFrameWidth = mVideoSize.getWidth();
@@ -1981,7 +1980,6 @@ Size mResultVideoResolution =                     Utility.getApproriateVideoSize
 
         if (mCameraId.equals(mICameraFacing.getFrontCameraId()))
             mMediaRecorder.setOrientationHint(270);
-
 
         mMediaRecorder.prepare();
 

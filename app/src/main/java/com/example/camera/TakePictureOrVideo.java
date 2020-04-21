@@ -7,10 +7,12 @@ import android.media.ThumbnailUtils;
 import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.provider.MediaStore;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -20,7 +22,7 @@ import androidx.constraintlayout.widget.Group;
 
 import java.io.File;
 
-public class TakePictureOrVideo extends AppCompatActivity {
+public class TakePictureOrVideo extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener {
 
 
     int mImageTagID;
@@ -255,12 +257,15 @@ public class TakePictureOrVideo extends AppCompatActivity {
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        // Open CameraActivity
-                        isTakePhoto = true;
-                        Intent mTakePicture = new Intent(TakePictureOrVideo.this, CameraActivity.class);
 
-                        mTakePicture.putExtra("picture", true);
-                        startActivityForResult(mTakePicture, REQUEST_CODE_CAMERA);
+                        PopupMenu mCameraMenu = new PopupMenu(TakePictureOrVideo.this, v);
+
+                        mCameraMenu.setOnMenuItemClickListener(TakePictureOrVideo.this);
+
+                        mCameraMenu.inflate(R.menu.popup_menu);
+
+                        mCameraMenu.show();
+
                     }
                 }
 
@@ -272,14 +277,15 @@ public class TakePictureOrVideo extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
 
-                        isTakeVideo = true;
-                        Intent mTakeVideo = new Intent(TakePictureOrVideo.this, CameraActivity.class);
 
-             //           mTakeVideo.putExtra("video", true);
-                        mTakeVideo.putExtra("fromVideothubnail", String.valueOf(isFromVideo));
-                        startActivityForResult(mTakeVideo, REQUEST_CODE_VIDEO);
 
-           //         finish();
+
+PopupMenu mVideoMenu = new PopupMenu(TakePictureOrVideo.this, v);
+mVideoMenu.inflate(R.menu.video_popup_menu);
+mVideoMenu.show();
+
+
+                        //         finish();
                     }
                 });
 
@@ -335,9 +341,9 @@ public class TakePictureOrVideo extends AppCompatActivity {
 
     // file name for video need to be sent from FormAction
     private void initBundle() {
-       // isFromVideo =  Boolean.parseBoolean(getIntent().getStringExtra("fromVideothubnail"));
+        // isFromVideo =  Boolean.parseBoolean(getIntent().getStringExtra("fromVideothubnail"));
 
-      //  String mFromCameraPreview = getIntent().getStringExtra("fromVideothubnail");
+        //  String mFromCameraPreview = getIntent().getStringExtra("fromVideothubnail");
         int camera = getIntent().getIntExtra("camera", 0);
         int video = getIntent().getIntExtra("video", 0);
 
@@ -352,7 +358,7 @@ public class TakePictureOrVideo extends AppCompatActivity {
         // get file name and load the thumbnail
 
         String mVideoFileName = getIntent().getStringExtra(FormAction.VIDEO);
-         isFromVideo = getIntent().getBooleanExtra("comingFromVideo", false);
+        isFromVideo = getIntent().getBooleanExtra("comingFromVideo", false);
 
         /*
         if(mFromCameraPreview != null){
@@ -362,9 +368,7 @@ public class TakePictureOrVideo extends AppCompatActivity {
         //"fromVideothubnail"
 
 
-
         setVideoData(isFromVideo, mVideoFileName);
-
 
 
         if (camera == 1) {
@@ -452,5 +456,39 @@ public class TakePictureOrVideo extends AppCompatActivity {
     }
 
 
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.concept_global_camera:
+                // Open CameraActivity
+                isTakePhoto = true;
+                Intent mTakePicture = new Intent(TakePictureOrVideo.this, CameraActivity.class);
+
+                mTakePicture.putExtra("picture", true);
+                startActivityForResult(mTakePicture, REQUEST_CODE_CAMERA);
+                return true;
+            case R.id.device_camera:
+                Toast.makeText(this, "WIP", Toast.LENGTH_LONG).show();
+                return true;
+
+            case R.id.device_video:
+                    Toast.makeText(this, "WIP",Toast.LENGTH_LONG).show();
+                return true;
+            case R.id.concept_global_video:
+           // case R.id.concept_global_video:
+
+                isTakeVideo = true;
+                Intent mTakeVideo = new Intent(TakePictureOrVideo.this, CameraActivity.class);
+
+                //           mTakeVideo.putExtra("video", true);
+                mTakeVideo.putExtra("fromVideothubnail", String.valueOf(isFromVideo));
+                startActivityForResult(mTakeVideo, REQUEST_CODE_VIDEO);
+
+
+            default:
+                return false;
+        }
+
+    }
 }
 

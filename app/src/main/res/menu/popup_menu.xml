@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/concept_global_camera"
+        android:title="concept_global_camera" />
+
+    <item
+        android:id="@+id/device_camera"
+        android:title="device_camera" />
+</menu>
