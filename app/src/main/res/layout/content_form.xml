@@ -126,7 +126,32 @@
                 app:layout_constraintEnd_toStartOf="@id/take_picture"
                 app:layout_constraintTop_toBottomOf="@id/farmerDetailsvideo1" />
 
-            <ImageButton
+
+
+            <Button
+                android:id="@+id/mJustCamera"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:layout_marginTop="10dp"
+                android:text="camera"/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+            <ImageView
+                android:visibility="gone"
                 android:id="@+id/take_picture"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -144,11 +169,12 @@
                 android:layout_marginEnd="4dp"
                 android:background="@android:color/holo_blue_light"
                 android:padding="10dp"
+                android:visibility="gone"
                 android:text="Visit Complete"
                 android:textAllCaps="false"
                 android:textColor="@android:color/white"
                 app:layout_constraintEnd_toEndOf="@id/container_for_scroll"
-                app:layout_constraintTop_toBottomOf="@id/take_picture" />
+                app:layout_constraintBottom_toBottomOf="parent" />
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
 

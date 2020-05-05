@@ -1,6 +1,8 @@
 package com.example.camera;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -12,6 +14,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -26,6 +29,9 @@ import java.util.ArrayList;
 // relook into list of filenames
 public class FormAction extends AppCompatActivity implements View.OnClickListener {
 
+
+    Button mJustCameraButton;
+
     String mVideoFileName;
     String mPictureFileName;
 
@@ -33,7 +39,7 @@ public class FormAction extends AppCompatActivity implements View.OnClickListene
 
 
     boolean isCameraPicAvailable = true;
-    ImageButton mTakePicture;
+    ImageView mTakePicture;
     ImageButton mTakeVideo;
 
     ImageView[] mArrayOFImages;
@@ -80,43 +86,122 @@ public class FormAction extends AppCompatActivity implements View.OnClickListene
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
+
+            case R.id.mJustCamera:
+
+
+                try {
+
+                    // If user tries to take more than 5 photos then do not allow the user
+                    if (isCameraPicAvailable) {
+                        if (checkHardwareLevel()) {
+                            Toast.makeText(FormAction.this, "CAMERA2 is unavilable", Toast.LENGTH_LONG);
+                        } else {
+
+
+                            Intent i = new Intent(FormAction.this, TakePictureOrVideo.class);
+                            // This is used to determine whether it is a camera or  video
+
+                            // throw new RuntimeException("camera not working::");
+
+                            i.putExtra(CAMERA, CLICK_TYPE1);
+                            startActivityForResult(i, RequestThumbnailPicture);
+                        }
+                        ;
+                    } else {
+                        Toast.makeText(FormAction.this, "total count reached", Toast.LENGTH_SHORT);
+                    }
+
+                } catch (Exception ex) {
+
+                    AlertDialog.Builder mBuilder = new AlertDialog.Builder(this);
+                    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+
+                                    ex.getMessage();
+                                    dialog.dismiss();
+                                }
+                            }
+                    );
+                    AlertDialog alert = mBuilder.create();
+                    alert.show();
+
+
+                }
+
+
+                break;
+
+
             case R.id.take_picture:
 
-                // If user tries to take more than 5 photos then do not allow the user
-                if (isCameraPicAvailable) {
-
-                    if (checkHardwareLevel()) {
-                        Toast.makeText(FormAction.this, "CAMERA2 is unavilable", Toast.LENGTH_LONG);
-                    } else {
-
-                        Intent i = new Intent(FormAction.this, TakePictureOrVideo.class);
-                        // This is used to determine whether it is a camera or  video
-                        i.putExtra(CAMERA, CLICK_TYPE1);
-                        startActivityForResult(i, RequestThumbnailPicture);
-                    }
-                } else {
-                    Toast.makeText(FormAction.this, "total count reached", Toast.LENGTH_SHORT);
-                }
                 break;
 
             case R.id.take_video:
-                if (mVideoFileName != null) {
-                    Toast.makeText(this, "maximum one video", Toast.LENGTH_LONG).show();
-                } else {
-                    Intent i = new Intent(FormAction.this, TakePictureOrVideo.class);
 
-                    i.putExtra(VIDEO, CLICK_TYPE2);
-                    startActivityForResult(i, RequestThumbnailVideo);
+
+                try{
+
+                    if (mVideoFileName != null) {
+                        Toast.makeText(this, "maximum one video", Toast.LENGTH_LONG).show();
+                    } else {
+
+
+
+                        Intent i = new Intent(FormAction.this, TakePictureOrVideo.class);
+
+                        i.putExtra(VIDEO, CLICK_TYPE2);
+                        startActivityForResult(i, RequestThumbnailVideo);
+                        // TestAlertDialog mCommonMessage = new TestAlertDialog(this, "take video capture even triggered");
+
+
+                    }
                 }
+                catch(Exception ex){
+                    AlertDialog.Builder mBuilder = new AlertDialog.Builder(this);
+                    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                    dialog.dismiss();
+                                }
+                            }
+                    );
+                    AlertDialog alert = mBuilder.create();
+                    alert.show();
+                }
+
                 break;
 
 
             // onTap of video recording  I will be sending filename
             case R.id.farmerDetailsvideo1:
-                Intent mVideoIntent = new Intent(FormAction.this, TakePictureOrVideo.class);
-                mVideoIntent.putExtra(VIDEO, mVideoFileName);
-                mVideoIntent.putExtra("comingFromVideo", true);
-                startActivityForResult(mVideoIntent, RequestThumbnailVideo);
+
+                try{
+
+                    Intent mVideoIntent = new Intent(FormAction.this, TakePictureOrVideo.class);
+                    mVideoIntent.putExtra(VIDEO, mVideoFileName);
+                    mVideoIntent.putExtra("comingFromVideo", true);
+                    startActivityForResult(mVideoIntent, RequestThumbnailVideo);
+                }catch (Exception ex){
+                    AlertDialog.Builder mBuilder = new AlertDialog.Builder(this);
+                    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+
+                                }
+                            }
+                    );
+                    AlertDialog alert = mBuilder.create();
+                    alert.show();
+                }
+
+
+
+
                 break;
 
 
@@ -129,16 +214,35 @@ public class FormAction extends AppCompatActivity implements View.OnClickListene
             image position to delete the file (this position is captured as part of tag)
              */
             default:
-                mPictureFileName = (String) v.getTag(R.string.tag_name);
-                Intent mStartTakePictureFromFormAction = new Intent(FormAction.this, TakePictureOrVideo.class);
-                mStartTakePictureFromFormAction.putExtra("mFileNameForPicture", mPictureFileName);
-                mStartTakePictureFromFormAction.putExtra(CAMERA, CLICK_TYPE1);
-                // did you tap on image then set is true
-                mStartTakePictureFromFormAction.putExtra("comingfrom_image", true);
-                // passing tag back and forth used to
-                mStartTakePictureFromFormAction.putExtra("deleteImagePosition", (Integer) v.getTag(R.string.image));
-                startActivityForResult(mStartTakePictureFromFormAction, DELETE_IMAGE);
-                Toast.makeText(FormAction.this, "list of image:: ", Toast.LENGTH_SHORT).show();
+try{
+
+    mPictureFileName = (String) v.getTag(R.string.tag_name);
+    Intent mStartTakePictureFromFormAction = new Intent(FormAction.this, TakePictureOrVideo.class);
+    mStartTakePictureFromFormAction.putExtra("mFileNameForPicture", mPictureFileName);
+    mStartTakePictureFromFormAction.putExtra(CAMERA, CLICK_TYPE1);
+    // did you tap on image then set is true
+    mStartTakePictureFromFormAction.putExtra("comingfrom_image", true);
+    // passing tag back and forth used to
+    mStartTakePictureFromFormAction.putExtra("deleteImagePosition", (Integer) v.getTag(R.string.image));
+    startActivityForResult(mStartTakePictureFromFormAction, DELETE_IMAGE);
+    Toast.makeText(FormAction.this, "list of image:: ", Toast.LENGTH_SHORT).show();
+}
+catch(Exception ex){
+    AlertDialog.Builder mBuilder2 = new AlertDialog.Builder(this);
+    mBuilder2.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                }
+            }
+    );
+    AlertDialog alert2 = mBuilder2.create();
+    alert2.show();
+
+}
+
+
+
         }
     }
 
@@ -279,7 +383,11 @@ file name, image position,
 
         // these two represent icons
         mTakePicture = findViewById(R.id.take_picture);
+
         mTakeVideo = findViewById(R.id.take_video);
+
+
+        mJustCameraButton = findViewById(R.id.mJustCamera);
 
 
         //farmerDetailsvideo1
@@ -297,8 +405,7 @@ file name, image position,
         // all click events are handled in switch case buddy
         mTakePicture.setOnClickListener(this);
         mTakeVideo.setOnClickListener(this);
-
-
+        mJustCameraButton.setOnClickListener(this);
         mArrayOFImages = new ImageView[]{
                 mFarmerDetailsImage1,
                 mFarmerDetailsImage2,
@@ -309,4 +416,5 @@ file name, image position,
         };
         mFarmerDetailsVideo1.setOnClickListener(this);
     }
+
 }

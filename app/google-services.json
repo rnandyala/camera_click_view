@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "870703585777",
+    "firebase_url": "https://pmccamera-739f0.firebaseio.com",
+    "project_id": "pmccamera-739f0",
+    "storage_bucket": "pmccamera-739f0.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:870703585777:android:119d74ae8811351ed30c50",
+        "android_client_info": {
+          "package_name": "com.example.camera"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "870703585777-ign6d1vvdf04flbibe8umje045jvvdo2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYxABdG4Rtcp4NKzeW4imvRf4Qku0JRz0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "870703585777-ign6d1vvdf04flbibe8umje045jvvdo2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

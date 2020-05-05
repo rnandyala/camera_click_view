@@ -3,6 +3,7 @@ package com.example.camera;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -36,6 +37,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
@@ -72,6 +74,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.text.Normalizer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -86,10 +89,14 @@ import static android.widget.Toast.LENGTH_SHORT;
 public class CameraActivity extends AppCompatActivity implements ICameraFacing, IBitmapConnector {
 
     List<Size> mHighSpeedVideoresolutions;
+
+   // mVideoQuality = "HIGH";
+   // mVideResolution = "640*480";
+
     String mVideoUpdate;
 
-    String mVideoQuality;
-    String mVideResolution;
+    String mVideoQuality = "HIGH";
+    String mVideResolution ="640*480";
     String mImageQuality;
     String mImageResolution;
 
@@ -338,15 +345,14 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
 
         mImageQuality = mSharedResults.getString("PREF_UPDATE_IMAGE_QUALITY", "");
         mImageResolution = mSharedResults.getString("PREF_UPDATE_RESOULTION", "");
-        mVideoQuality = mSharedResults.getString("PREF_VIDEO_QUALITY", "");
-        mVideResolution = mSharedResults.getString("PREF_VIDEO_RESOULTION", "");
+    //    mVideoQuality = mSharedResults.getString("PREF_VIDEO_QUALITY", "");
+       // mVideResolution = mSharedResults.getString("PREF_VIDEO_RESOULTION", "");
 
-        if (mImageQuality.isEmpty() && mImageResolution.isEmpty() && mVideoQuality.isEmpty() && mVideResolution.isEmpty()) {
+        if (mImageQuality.isEmpty() || mImageResolution.isEmpty() || mVideoQuality.isEmpty() || mVideResolution.isEmpty()) {
 
             mImageQuality = "100";
             mImageResolution = "1920*1080";
-            mVideoQuality = "LOW";
-            mVideResolution = "1280*720";
+
 
         }
 
@@ -544,52 +550,39 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
         );
 
 
+
         mVideoRecorder.setOnClickListener(
                 new View.OnClickListener() {
                     @RequiresApi(api = Build.VERSION_CODES.M)
                     @Override
                     public void onClick(View v) {
                         if (isVideorecording) {
-
-                            mChronometer.stop();
-                            mChronometer.setVisibility(View.GONE);
-// when video is not being recorded then
-                            videoRecording();
-                            mMediaRecorder.stop();
-                            mMediaRecorder.reset();
-                            isVideorecording = false;
-
-
-                            File mFile = new File(CameraActivity.this.getExternalFilesDir(null), mVideoFileName);
-                            final int THUMBSIZE = 400;
-                            //final Bitmap bitmap = ThumbnailUtils.createVideoThumbnail(recordedFile, MediaStore.Video.Thumbnails.MINI_KIND);
-
-                            CancellationSignal mCancelSignal = new CancellationSignal();
-                            fileName = mFile.getAbsolutePath();
-
-                            Bitmap mThumbImage = ThumbnailUtils.createVideoThumbnail(mVideoFileName, MediaStore.Video.Thumbnails.MINI_KIND);
-
-                            //   setmThumbImage(mThumbImage);
-                            mConstraintContainer.setVisibility(View.VISIBLE);
-                            mInternalMemoryImage.setImageBitmap(mThumbImage);
-                            mInternalMemoryImage.setVisibility(View.VISIBLE);
-                            mDiscardImage.setVisibility(View.VISIBLE);
-                            mAcceptImage.setVisibility(View.VISIBLE);
-
-                            mVideoFileName.toCharArray();
-
-                            fileName = mVideoFileName;
-                            //Drawable img = getResources().getDrawable(android.R.d)
-                            mVideoRecorder.setImageDrawable(getResources().getDrawable(android.R.drawable.presence_video_online));
+setMediaRecorderInit(isVideorecording, true);
                         } else {
                             // when videos is recording then
                             isVideorecording = true;
                             mVideoRecorder.setImageDrawable(getResources().getDrawable(android.R.drawable.presence_video_busy));
                             startRecord();
                             mMediaRecorder.start();
-                            mChronometer.setBase(SystemClock.elapsedRealtime());
+                            mChronometer.setBase(SystemClock.elapsedRealtime()+30000);
                             mChronometer.setVisibility(View.VISIBLE);
                             mChronometer.start();
+                            MediaRecorder.OnInfoListener mMediaListener = new MediaRecorder.OnInfoListener() {
+                                @Override
+                                public void onInfo(MediaRecorder mr, int what, int extra) {
+
+                              if(MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED == what){
+setMediaRecorderInit(isVideorecording,false);
+
+                              }
+
+                                }
+                            };
+
+                            mMediaRecorder.setOnInfoListener(mMediaListener);
+
+
+
                         }
 
                     }
@@ -662,13 +655,23 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
     }
 
     private void initIntent() {
+
         Boolean mPhoto = getIntent().getExtras().getBoolean("picture");
+//Boolean mPhoto = true;
 
         mVideoUpdate = getIntent().getStringExtra("fromVideothubnail");
 
-        // Boolean mVideo = getIntent().getExtras().getBoolean("video");
+        if (mVideoUpdate != null) {
+            // if it is coming from video then disable the switch cmaera otpion
 
-        String isVideo = getIntent().getExtras().getString("");
+            mOrientation.setVisibility(View.GONE);
+
+        }
+
+        // Boolean mVideo = getIntent().getExtras().getBoolean("video");
+// commented on may 4th
+  //      String isVideo = getIntent().getExtras().getString("");
+
         if (mPhoto != null && mPhoto) {
 
             mCamera.setVisibility(View.VISIBLE);
@@ -679,12 +682,14 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
             mCamera.setVisibility(View.GONE);
 
         }
+/*
+        if(getIntent().getExtras().getString(FormAction.VIDEO) != null) {
+            String mFileName = getIntent().getExtras().getString(FormAction.VIDEO);
 
-        String mFileName = getIntent().getExtras().getString(FormAction.VIDEO);
+            if (mFileName != null) {
 
-        if (mFileName != null) {
-
-        }
+            }
+        }*/
 
 
     }
@@ -1170,9 +1175,9 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
 
                 // for the first time launch we will set the camera to front facing
 
-                mICameraFacing.setCameraFrontFacing();
+                mICameraFacing.setCameraBackFacing();
 
-                mCameraId = mICameraFacing.getFrontCameraId();
+                mCameraId = mICameraFacing.getBackCameraId();
             }
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -1880,15 +1885,21 @@ closeCamera();
     private void setUpMediaRecorder() throws IOException {
 //  CameraActivity.this.getExternalFilesDir(null)
         //   getExternalFilesDir(null).getAbsolutePath();
+        Date mCurrentDate = new Date();
+        SimpleDateFormat formatter = new SimpleDateFormat("dd-M-yyyy hh:mm:ss.SSS");
+        String mCurrentDateTime = formatter.format(mCurrentDate);
+       File mFile =  new File(getExternalFilesDir(null), mCurrentDateTime+"temp_video.mp4");
+     //   File mFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), mCurrentDateTime+"temp.mp4");
 
-        File file = new File(getExternalFilesDir(null), "temp_video.mp4");
-        mVideoFileName = file.getAbsolutePath();
+        //   File file = new File(getExternalFilesDir(null), "temp_video.mp4");
+        mVideoFileName = mFile.getAbsolutePath();
         mMediaRecorder.setOrientationHint(90);
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mMediaRecorder.setMaxDuration(30000);
         // mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
 
-//
+// dc
 
         //  CamcorderProfile.QUALITY_480P;
 
@@ -1900,9 +1911,11 @@ closeCamera();
 
 
 //640,480
-        if (mVideoQuality.equals("HIGH")) {
+
             if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH)) {
                 Log.v("apprently", "result is");
+
+
                 CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH);
                 profile.fileFormat = MediaRecorder.OutputFormat.MPEG_4;
 
@@ -1914,6 +1927,14 @@ closeCamera();
                     Size mResultVideoResolution = Utility.getApproriateVideoSize(mHighSpeedVideoresolutions,
                             Integer.parseInt(resolutions[0]), Integer.parseInt(resolutions[1]));
 
+                    AlertDialog.Builder mAlert = new AlertDialog
+                            .Builder(CameraActivity.this)
+                            .setTitle("resolution of your cam ")
+                            .setMessage("camera resolution" + mResultVideoResolution.getWidth() +
+                                    "::" + mResultVideoResolution.getHeight());
+                    mAlert.create();
+                    mAlert.show();
+
 
                     // Utility.getApproriateVideoSize(m)
                     profile.videoFrameWidth = mResultVideoResolution.getWidth();
@@ -1921,25 +1942,32 @@ closeCamera();
 
 
                     // profile
-                } else {
+                }
+
+                // this is for back camera
+               /*
+                else {
                     //       mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
 
                     profile.videoFrameWidth = mVideoSize.getWidth();
                     profile.videoFrameHeight = mVideoSize.getHeight();
                     // mMediaRecorder.setOrientationHint(270);
-                }
+                }*/
 
 
                 profile.videoCodec = MediaRecorder.VideoEncoder.H264;
                 profile.audioCodec = MediaRecorder.AudioEncoder.AAC;
                 mMediaRecorder.setProfile(profile);
-            }
-        } else if (mVideoQuality.equals("LOW")) {
+
+
+      /*
+      This is for low resolution not using as of now
+
+        else if (mVideoQuality.equals("LOW")) {
             if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_LOW)) {
 
                 CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_LOW);
 
-                //input.split("[\\s@&.?$+-]+");
                 String[] resolutions = mVideResolution.split("[*]+");
                 if (mCameraId.equals(mICameraFacing.getBackCameraId())) {
                     Size mResultVideoResolution = Utility.getApproriateVideoSize(mHighSpeedVideoresolutions,
@@ -1948,12 +1976,8 @@ closeCamera();
                     profile.videoFrameWidth = mResultVideoResolution.getWidth();
                     profile.videoFrameHeight = mResultVideoResolution.getHeight();
                 } else {
-                    //  mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
-
-
                     profile.videoFrameWidth = mVideoSize.getWidth();
                     profile.videoFrameHeight = mVideoSize.getHeight();
-                    //    mMediaRecorder.setOrientationHint(270);
 
 
                 }
@@ -1964,14 +1988,17 @@ closeCamera();
                 mMediaRecorder.setProfile(profile);
 
             }
+            */
+
 
 
         }
 
 
-        mMediaRecorder.setOutputFile(file.getAbsolutePath());
+        mMediaRecorder.setOutputFile(mVideoFileName);
         mMediaRecorder.setVideoEncodingBitRate(1000000);
         mMediaRecorder.setVideoFrameRate(30);
+
         //  mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
 
         //     mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
@@ -1982,6 +2009,7 @@ closeCamera();
             mMediaRecorder.setOrientationHint(270);
 
         mMediaRecorder.prepare();
+
 
     }
 
@@ -2005,6 +2033,68 @@ closeCamera();
 
         mSettings = findViewById(R.id.settings);
 
+        mSettings.setVisibility(View.GONE);
+
+    }
+
+
+    public void setMediaRecorderInit(boolean isVideorecording, boolean isStoppedBeforeMaxLimit) {
+
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+                if (isVideorecording) {
+                    //          mChronometer.setVisibility(View.GONE);
+                    mChronometer.stop();
+
+
+                      mChronometer.setVisibility(View.GONE);
+// when video is not being recorded then
+                    videoRecording();
+if(isStoppedBeforeMaxLimit)
+                   mMediaRecorder.stop();
+
+                          mMediaRecorder.reset();
+                          setVideoRecording();
+                  // this.isVideorecording = false;
+///storage/emulated/0/Movies/23-4-2020 08:24:43.195temp.mp4
+
+              //      MediaStore.Video.
+
+
+                    File mFile =  new File(getExternalFilesDir(null), mVideoFileName);
+             //       File mFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), mVideoFileName);
+                    final int THUMBSIZE = 400;
+                    //final Bitmap bitmap = ThumbnailUtils.createVideoThumbnail(recordedFile, MediaStore.Video.Thumbnails.MINI_KIND);
+
+                    //  CancellationSignal mCancelSignal = new CancellationSignal();
+                    fileName = mFile.getAbsolutePath();
+
+                    Bitmap mThumbImage = ThumbnailUtils.createVideoThumbnail(mVideoFileName, MediaStore.Video.Thumbnails.MINI_KIND);
+
+                    //   setmThumbImage(mThumbImage);
+                    mConstraintContainer.setVisibility(View.VISIBLE);
+                    mInternalMemoryImage.setImageBitmap(mThumbImage);
+                    mInternalMemoryImage.setVisibility(View.VISIBLE);
+                    mDiscardImage.setVisibility(View.VISIBLE);
+                    mAcceptImage.setVisibility(View.VISIBLE);
+
+                    mVideoFileName.toCharArray();
+
+                    fileName = mVideoFileName;
+                    //Drawable img = getResources().getDrawable(android.R.d)
+                    mVideoRecorder.setImageDrawable(getResources().getDrawable(android.R.drawable.presence_video_online));
+                }
+            }
+        });
+
+
+    }
+
+    private void setVideoRecording() {
+        this.isVideorecording = false;
     }
 
 

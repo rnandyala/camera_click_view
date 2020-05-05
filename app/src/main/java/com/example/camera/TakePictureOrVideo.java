@@ -1,5 +1,7 @@
 package com.example.camera;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -182,6 +184,47 @@ public class TakePictureOrVideo extends AppCompatActivity implements PopupMenu.O
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+try{
+    if (isTakeVideo && isFromVideo) {
+        Intent mUpdateVideo = new Intent();
+        mUpdateVideo.putExtra("fileName", fileName);
+        setResult(RESULT_OK, mUpdateVideo);
+        finish();
+    } else if (isTakePhoto && isFromImage) {
+
+        Intent mUpdateImage = new Intent();
+        mUpdateImage.putExtra("imageID", mImageTagID);
+        mUpdateImage.putExtra("fileName", fileName);
+        //updatescreen
+        mUpdateImage.putExtra("updatescreen", true);
+
+        setResult(RESULT_OK, mUpdateImage);
+        finish();
+
+        // mImageTagID
+        // sendFileName or fileName
+        //fileName
+
+    } else {
+        Toast.makeText(TakePictureOrVideo.this, "take another video:", Toast.LENGTH_LONG).show();
+    }
+}
+catch(Exception ex){
+
+
+    AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
+    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                }
+            }
+    );
+    AlertDialog alert = mBuilder.create();
+    alert.show();
+
+}
+
 
                 /*
                         if (mThumbImage != null) {
@@ -193,29 +236,7 @@ public class TakePictureOrVideo extends AppCompatActivity implements PopupMenu.O
                             Toast.makeText(TakePictureOrVideo.this, "currently thumbnail is unavailable", Toast.LENGTH_LONG).show();
                         }*/
 
-                        if (isTakeVideo && isFromVideo) {
-                            Intent mUpdateVideo = new Intent();
-                            mUpdateVideo.putExtra("fileName", fileName);
-                            setResult(RESULT_OK, mUpdateVideo);
-                            finish();
-                        } else if (isTakePhoto && isFromImage) {
 
-                            Intent mUpdateImage = new Intent();
-                            mUpdateImage.putExtra("imageID", mImageTagID);
-                            mUpdateImage.putExtra("fileName", fileName);
-                            //updatescreen
-                            mUpdateImage.putExtra("updatescreen", true);
-
-                            setResult(RESULT_OK, mUpdateImage);
-                            finish();
-
-                            // mImageTagID
-                            // sendFileName or fileName
-                            //fileName
-
-                        } else {
-                            Toast.makeText(TakePictureOrVideo.this, "take another video:", Toast.LENGTH_LONG).show();
-                        }
 
                    /*
                         if (mThumbImage != null) {
@@ -237,15 +258,33 @@ public class TakePictureOrVideo extends AppCompatActivity implements PopupMenu.O
                         //   setResult();
                         //mTakePhoto
 
-                        Integer mPicutreTag = (Integer) mImageTagID;
+                        try{
+                            Integer mPicutreTag = (Integer) mImageTagID;
 
-                        if (mPicutreTag != null) {
-                            Intent mImageIntent = new Intent();
-                            mImageIntent.putExtra("image_file_name", fileName);
-                            mImageIntent.putExtra("imageToDelete", mPicutreTag);
-                            setResult(RESULT_OK, mImageIntent);
-                            finish();
+                            if (mPicutreTag != null) {
+                                Intent mImageIntent = new Intent();
+                                mImageIntent.putExtra("image_file_name", fileName);
+                                mImageIntent.putExtra("imageToDelete", mPicutreTag);
+                                setResult(RESULT_OK, mImageIntent);
+                                finish();
+                            }
+
                         }
+                        catch(Exception ex){
+
+                            AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
+                            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+
+                                        }
+                                    }
+                            );
+                            AlertDialog alert = mBuilder.create();
+                            alert.show();
+                        }
+
+
 
 
                     }
@@ -258,13 +297,28 @@ public class TakePictureOrVideo extends AppCompatActivity implements PopupMenu.O
                     @Override
                     public void onClick(View v) {
 
-                        PopupMenu mCameraMenu = new PopupMenu(TakePictureOrVideo.this, v);
+                        try {
+                            PopupMenu mCameraMenu = new PopupMenu(TakePictureOrVideo.this, v);
 
-                        mCameraMenu.setOnMenuItemClickListener(TakePictureOrVideo.this);
+                            mCameraMenu.setOnMenuItemClickListener(TakePictureOrVideo.this);
 
-                        mCameraMenu.inflate(R.menu.popup_menu);
+                            mCameraMenu.inflate(R.menu.popup_menu);
 
-                        mCameraMenu.show();
+                            mCameraMenu.show();
+                        } catch (Exception ex) {
+                            AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
+                            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+
+
+                                        }
+                                    }
+                            );
+                            AlertDialog alert = mBuilder.create();
+                            alert.show();
+                        }
+
 
                     }
                 }
@@ -277,15 +331,33 @@ public class TakePictureOrVideo extends AppCompatActivity implements PopupMenu.O
                     @Override
                     public void onClick(View v) {
 
+                        try{
+
+                            PopupMenu mVideoMenu = new PopupMenu(TakePictureOrVideo.this, v);
+                            mVideoMenu.setOnMenuItemClickListener(TakePictureOrVideo.this);
+                            mVideoMenu.inflate(R.menu.video_popup_menu);
+                            mVideoMenu.show();
+                        }
+                        catch(Exception ex){
+
+                            AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
+                            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
 
 
 
-PopupMenu mVideoMenu = new PopupMenu(TakePictureOrVideo.this, v);
-mVideoMenu.inflate(R.menu.video_popup_menu);
-mVideoMenu.show();
+                                        }
+                                    }
+                            );
+                            AlertDialog alert = mBuilder.create();
+                            alert.show();
+                        }
 
 
-                        //         finish();
+//
+
+
                     }
                 });
 
@@ -293,17 +365,27 @@ mVideoMenu.show();
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
+                        mBuilder.setMessage("cancel event triggered").setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        if (mFile != null) {
+                                            boolean isFilePresent = mFile.delete();
+                                            if (!isFilePresent) {
+                                                Toast.makeText(TakePictureOrVideo.this, "unable_to_delete_the_file", Toast.LENGTH_LONG);
+                                            }
+                                        }
 
-                        finish();
+                                        finish();
+                                    }
+                                }
+                        );
+                        AlertDialog alert = mBuilder.create();
+                        alert.show();
                         // delete the image from the storage
                         // Unable to delete the files in package folder
 
-                        if (mFile != null) {
-                            boolean isFilePresent = mFile.delete();
-                            if (!isFilePresent) {
-                                Toast.makeText(TakePictureOrVideo.this, "unable_to_delete_the_file", Toast.LENGTH_LONG);
-                            }
-                        }
+
                     }
                 }
         );
@@ -312,17 +394,44 @@ mVideoMenu.show();
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        // pass bitmap or thumbnail back to formaction
 
 
-                        if (mThumbImage != null) {
-                            Intent mThumbImageIntent = new Intent();
-                            mThumbImageIntent.putExtra("fileName", fileName);
-                            setResult(RESULT_OK, mThumbImageIntent);
-                            TakePictureOrVideo.this.finish();
-                        } else {
-                            Toast.makeText(TakePictureOrVideo.this, "currently thumbnail is unavailable", Toast.LENGTH_LONG).show();
+
+
+
+
+                        try{
+                            if (mThumbImage != null) {
+
+
+                                Intent mThumbImageIntent = new Intent();
+                                mThumbImageIntent.putExtra("fileName", fileName);
+                                setResult(RESULT_OK, mThumbImageIntent);
+                                TakePictureOrVideo.this.finish();
+                            } else {
+                                Toast.makeText(TakePictureOrVideo.this, "currently thumbnail is unavailable", Toast.LENGTH_LONG).show();
+                            }
                         }
+
+                        catch(Exception ex){
+
+                            // pass bitmap or thumbnail back to formaction
+                            AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
+                            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+
+                                        }
+                                    }
+                            );
+                            AlertDialog alert = mBuilder.create();
+                            alert.show();
+
+                        }
+
+
+
+
 
 
 
@@ -344,8 +453,14 @@ mVideoMenu.show();
         // isFromVideo =  Boolean.parseBoolean(getIntent().getStringExtra("fromVideothubnail"));
 
         //  String mFromCameraPreview = getIntent().getStringExtra("fromVideothubnail");
-        int camera = getIntent().getIntExtra("camera", 0);
-        int video = getIntent().getIntExtra("video", 0);
+
+
+
+        // commented on may 4th for testing
+     int camera = getIntent().getIntExtra("camera", 0);
+     int video = getIntent().getIntExtra("video", 0);
+
+
 
         // get file name and where it is coming from
         String mFileName = getIntent().getStringExtra("mFileNameForPicture");
@@ -370,7 +485,6 @@ mVideoMenu.show();
 
         setVideoData(isFromVideo, mVideoFileName);
 
-
         if (camera == 1) {
             mVideoGroup.setVisibility(View.GONE);
             mPictureGroup.setVisibility(View.VISIBLE);
@@ -378,6 +492,7 @@ mVideoMenu.show();
             mFirstVisit.setVisibility(View.VISIBLE);
             mUpdateVisit.setVisibility(View.GONE);
         }
+
 
 
         if (video == 2) {
@@ -458,32 +573,76 @@ mVideoMenu.show();
 
     @Override
     public boolean onMenuItemClick(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.concept_global_camera:
-                // Open CameraActivity
-                isTakePhoto = true;
-                Intent mTakePicture = new Intent(TakePictureOrVideo.this, CameraActivity.class);
 
-                mTakePicture.putExtra("picture", true);
-                startActivityForResult(mTakePicture, REQUEST_CODE_CAMERA);
+        int id = item.getItemId();
+
+
+        switch (item.getItemId()) {
+
+
+            case R.id.concept_global_video:
+                // case R.id.concept_global_video:
+                try {
+                    Intent mTakeVideo = new Intent(TakePictureOrVideo.this, CameraActivity.class);
+                    //           mTakeVideo.putExtra("video", true);
+                    mTakeVideo.putExtra("fromVideothubnail", String.valueOf(isFromVideo));
+                    startActivityForResult(mTakeVideo, REQUEST_CODE_VIDEO);
+                    isTakeVideo = true;
+                } catch (Exception ex) {
+                    AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
+                    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+
+                                }
+                            }
+                    );
+                    AlertDialog alert = mBuilder.create();
+                    alert.show();
+                }
+
+
+                return true;
+
+
+            case R.id.concept_global_camera:
+
+
+                try{
+                    // Open CameraActivity
+                    isTakePhoto = true;
+                    Intent mTakePicture = new Intent(TakePictureOrVideo.this, CameraActivity.class);
+
+                    mTakePicture.putExtra("picture", true);
+                    startActivityForResult(mTakePicture, REQUEST_CODE_CAMERA);
+                }
+
+                catch(Exception ex){
+                    AlertDialog.Builder mBuilder2 = new AlertDialog.Builder(TakePictureOrVideo.this);
+                    mBuilder2.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+
+                                }
+                            }
+                    );
+                    AlertDialog alert2 = mBuilder2.create();
+                    alert2.show();
+                }
+
+
+
+
                 return true;
             case R.id.device_camera:
                 Toast.makeText(this, "WIP", Toast.LENGTH_LONG).show();
                 return true;
 
             case R.id.device_video:
-                    Toast.makeText(this, "WIP",Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "WIP", Toast.LENGTH_LONG).show();
                 return true;
-            case R.id.concept_global_video:
-           // case R.id.concept_global_video:
-
-                isTakeVideo = true;
-                Intent mTakeVideo = new Intent(TakePictureOrVideo.this, CameraActivity.class);
-
-                //           mTakeVideo.putExtra("video", true);
-                mTakeVideo.putExtra("fromVideothubnail", String.valueOf(isFromVideo));
-                startActivityForResult(mTakeVideo, REQUEST_CODE_VIDEO);
-
 
             default:
                 return false;

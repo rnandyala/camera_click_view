@@ -1,13 +1,17 @@
 package com.example.camera;
 
 import android.content.Context;
+import android.opengl.Matrix;
 import android.util.AttributeSet;
+import android.view.ScaleGestureDetector;
 import android.view.TextureView;
 
 public class ScalingTextureView extends TextureView {
-
+Matrix mMartrix;
     int mRatioWidth = 0;
     int mRatioHeight = 0;
+
+    ScaleGestureDetector mScaleGestureDetector;
 
     public ScalingTextureView(Context context) {
         super(context);
@@ -47,5 +51,40 @@ public class ScalingTextureView extends TextureView {
             setMeasuredDimension(width, height);
         }
         setMeasuredDimension(width,height);
+    }
+
+
+
+
+
+
+
+
+
+
+    // adding zoom functionality
+
+    private void init(Context mContext){
+
+       // matrix is used to transform the textureview
+        // mMartrix = new Matrix();
+
+        mScaleGestureDetector = new ScaleGestureDetector(mContext, new ScaleGestureDetector.OnScaleGestureListener() {
+            @Override
+            public boolean onScale(ScaleGestureDetector detector) {
+                return false;
+            }
+
+            @Override
+            public boolean onScaleBegin(ScaleGestureDetector detector) {
+                return false;
+            }
+
+            @Override
+            public void onScaleEnd(ScaleGestureDetector detector) {
+
+            }
+        });
+
     }
 }

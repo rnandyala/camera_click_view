@@ -17,14 +17,33 @@ public class Utility {
 
         if (mHighResoutionVideoSizes.contains(mVideoSize)) {
             return mVideoSize;
-        } else {
+        }
+
+
+        else {
+
             for (int i = 0; i < mHighResoutionVideoSizes.size(); i++) {
                 Size mHighResolutionVideoSizes = mHighResoutionVideoSizes.get(i);
                 // so first approiate size is set as video size
+             /*
                 if (mHighResolutionVideoSizes.getWidth() - mVideoSize.getWidth() < 150
                         || mVideoSize.getWidth() - mHighResolutionVideoSizes.getWidth() < 150) {
                     mVideoSize = mHighResolutionVideoSizes;
+                }*/
+
+          int    sumOfCommonResolutions = mHighResolutionVideoSizes.getWidth() + mHighResolutionVideoSizes.getHeight();
+
+                // offset 1200
+                // offset 560 560
+                int offSet = 250;
+                if(sumOfCommonResolutions > (1120 + offSet)){
+
+                    return mHighResolutionVideoSizes;
                 }
+                else {
+                    return mHighResolutionVideoSizes;
+                }
+
             }
         }
 
