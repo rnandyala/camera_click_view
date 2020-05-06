@@ -28,33 +28,24 @@ public class CameraSettings extends AppCompatActivity {
         mClosePreference = findViewById(R.id.mClosePreference);
 
 
-       try {
-           getSupportFragmentManager()
-                   .beginTransaction()
-                   .replace(android.R.id.content, new CameraPreference())
-                   .commit();
+        try {
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(android.R.id.content, new CameraPreference())
+                    .commit();
 
-       }
-       catch (Exception ex){
-           AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraSettings.this);
-           mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
-                       @Override
-                       public void onClick(DialogInterface dialog, int which) {
+        } catch (Exception ex) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraSettings.this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
 
-                       }
-                   }
-           );
-           AlertDialog alert = mBuilder.create();
-           alert.show();
-       }
-
-
-
-
-
-
-
-
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
+        }
 
 
     }

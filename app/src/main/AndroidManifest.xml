@@ -5,13 +5,14 @@
     <uses-feature
         android:name="android.harware.camera"
         android:required="true" />
-
+  <!--  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /> -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
+        android:name=".CameraApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -19,12 +20,14 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name=".TakePictureOrVideo">
+        <activity android:name=".TakePictureOrVideo"
+            android:screenOrientation="portrait">
 
         </activity>
         <activity
             android:name=".FormAction"
             android:label="iconcept_camera"
+            android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar">
 
             <intent-filter>
@@ -41,10 +44,12 @@
             android:theme="@style/AppTheme.NoActionBar" >
 
         </activity>
-        <activity android:name=".MainActivity" />
+        <activity android:name=".MainActivity"
+            android:screenOrientation="portrait"/>
         <service android:name=".ReadImage" />
 
-        <activity android:name=".CameraSettings"/>
+        <activity android:name=".CameraSettings"
+            android:screenOrientation="portrait"/>
     </application>
 
 </manifest>

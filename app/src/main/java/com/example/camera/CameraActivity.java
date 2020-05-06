@@ -2174,7 +2174,7 @@ and then get bitmap using decodeByteArray
                         if (fileName != null) {
                             i.putExtra("fileNameOfImage", fileName);
                         } else {
-                            Toast.makeText(CameraActivity.this, "image not available in the storage", Toast.LENGTH_LONG);
+                            Toast.makeText(CameraActivity.this, "image not available in the storage", Toast.LENGTH_LONG).show();
                         }
                         startService(i);
                         if (mCapturedImage != null) {
