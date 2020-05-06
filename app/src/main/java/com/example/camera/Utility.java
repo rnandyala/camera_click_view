@@ -1,5 +1,7 @@
 package com.example.camera;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.util.Size;
 
 import java.util.ArrayList;
@@ -12,42 +14,45 @@ public class Utility {
 
     static Size getApproriateVideoSize(List<Size> mHighResoutionVideoSizes, int width, int height) {
 
+try {
+    Size mVideoSize = new Size(width, height);
 
-        Size mVideoSize = new Size(width, height);
+    if (mHighResoutionVideoSizes.contains(mVideoSize)) {
+        return mVideoSize;
+    } else {
 
-        if (mHighResoutionVideoSizes.contains(mVideoSize)) {
-            return mVideoSize;
-        }
-
-
-        else {
-
-            for (int i = 0; i < mHighResoutionVideoSizes.size(); i++) {
-                Size mHighResolutionVideoSizes = mHighResoutionVideoSizes.get(i);
-                // so first approiate size is set as video size
+        for (int i = 0; i < mHighResoutionVideoSizes.size(); i++) {
+            Size mHighResolutionVideoSizes = mHighResoutionVideoSizes.get(i);
+            // so first approiate size is set as video size
              /*
                 if (mHighResolutionVideoSizes.getWidth() - mVideoSize.getWidth() < 150
                         || mVideoSize.getWidth() - mHighResolutionVideoSizes.getWidth() < 150) {
                     mVideoSize = mHighResolutionVideoSizes;
                 }*/
 
-          int    sumOfCommonResolutions = mHighResolutionVideoSizes.getWidth() + mHighResolutionVideoSizes.getHeight();
+            int sumOfCommonResolutions = mHighResolutionVideoSizes.getWidth() + mHighResolutionVideoSizes.getHeight();
 
-                // offset 1200
-                // offset 560 560
-                int offSet = 250;
-                if(sumOfCommonResolutions > (1120 + offSet)){
+            // offset 1200
+            // offset 560 560
+            int offSet = 250;
+            if (sumOfCommonResolutions > (1120 + offSet)) {
 
-                    return mHighResolutionVideoSizes;
-                }
-                else {
-                    return mHighResolutionVideoSizes;
-                }
-
+                return mHighResolutionVideoSizes;
+            } else {
+                return mHighResolutionVideoSizes;
             }
-        }
 
-        return mVideoSize;
+        }
+    }
+
+    return mVideoSize;
+
+}
+catch(Exception ex){
+  ex.getMessage();
+}
+
+return  null;
     }
 
 
@@ -62,10 +67,16 @@ public class Utility {
 
         @Override
         public int compare(Size lhs, Size rhs) {
-            // We cast here to ensure the multiplications won't overflow
-            return Long.signum((long) lhs.getWidth() * lhs.getHeight() -
-                    (long) rhs.getWidth() * rhs.getHeight());
-        }
+           try {
+               // We cast here to ensure the multiplications won't overflow
+               return Long.signum((long) lhs.getWidth() * lhs.getHeight() -
+                       (long) rhs.getWidth() * rhs.getHeight());
+           }
+           catch (Exception ex){
+               ex.getMessage();
+           }
+return -1;
+           }
 
     }
 
@@ -95,31 +106,40 @@ public class Utility {
         List<Size> bigEnough = new ArrayList<>();
         // Collect the supported resolutions that are smaller than the preview Surface
         List<Size> notBigEnough = new ArrayList<>();
-        int w = aspectRatio.getWidth();
-        int h = aspectRatio.getHeight();
-        for (Size option : choices) {
+
+
+        try {
+            int w = aspectRatio.getWidth();
+            int h = aspectRatio.getHeight();
+            for (Size option : choices) {
 //            Log.d(TAG, "chooseOptimalSize: w: " + option.getWidth() + ", h: " + option.getHeight());
 
-            if (option.getWidth() <= maxWidth && option.getHeight() <= maxHeight &&
-                    option.getHeight() == option.getWidth() * h / w) {
-                if (option.getWidth() >= textureViewWidth &&
-                        option.getHeight() >= textureViewHeight) {
-                    bigEnough.add(option);
-                } else {
-                    notBigEnough.add(option);
+                if (option.getWidth() <= maxWidth && option.getHeight() <= maxHeight &&
+                        option.getHeight() == option.getWidth() * h / w) {
+                    if (option.getWidth() >= textureViewWidth &&
+                            option.getHeight() >= textureViewHeight) {
+                        bigEnough.add(option);
+                    } else {
+                        notBigEnough.add(option);
+                    }
                 }
             }
+
+            // Pick the smallest of those big enough. If there is no one big enough, pick the
+            // largest of those not big enough.
+            if (bigEnough.size() > 0) {
+                return Collections.min(bigEnough, new CompareSizesByArea());
+            } else if (notBigEnough.size() > 0) {
+                return Collections.max(notBigEnough, new CompareSizesByArea());
+            } else {
+                return choices[0];
+            }
+        }
+        catch (Exception ex){
+            ex.getMessage();
         }
 
-        // Pick the smallest of those big enough. If there is no one big enough, pick the
-        // largest of those not big enough.
-        if (bigEnough.size() > 0) {
-            return Collections.min(bigEnough, new CompareSizesByArea());
-        } else if (notBigEnough.size() > 0) {
-            return Collections.max(notBigEnough, new CompareSizesByArea());
-        } else {
-            return choices[0];
-        }
+        return null;
     }
 }
 

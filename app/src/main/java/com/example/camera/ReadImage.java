@@ -1,7 +1,9 @@
 package com.example.camera;
 
+import android.app.AlertDialog;
 import android.app.IntentService;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.ImageDecoder;
@@ -59,7 +61,7 @@ public class ReadImage extends IntentService {
 
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
-
+try{
         String fileName = intent.getStringExtra("fileNameOfImage");
 
         //    Environment.getExternalStorageDirectory();
@@ -141,5 +143,18 @@ public class ReadImage extends IntentService {
                 ex.printStackTrace();
             }
         }
+        }
+catch(Exception ex){
+    AlertDialog.Builder mBuilder = new AlertDialog.Builder(ReadImage.this);
+    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                }
+            }
+    );
+    AlertDialog alert = mBuilder.create();
+    alert.show();
+}
     }
 }

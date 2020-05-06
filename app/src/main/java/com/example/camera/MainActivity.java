@@ -6,6 +6,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -28,7 +30,24 @@ public class MainActivity extends AppCompatActivity {
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        askPermission();
+
+                   try {
+                       askPermission();
+                   }
+                   catch(Exception ex){
+
+                       AlertDialog.Builder mBuilder = new AlertDialog.Builder(MainActivity.this);
+                       mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                   @Override
+                                   public void onClick(DialogInterface dialog, int which) {
+
+                                   }
+                               }
+                       );
+                       AlertDialog alert = mBuilder.create();
+                       alert.show();
+                   }
+
                     }
                 }
         );
@@ -62,10 +81,13 @@ public class MainActivity extends AppCompatActivity {
                     Manifest.permission.WRITE_EXTERNAL_STORAGE,
                     Manifest.permission.CAMERA}, REQUEST_CODE_READ_PERMISSION);
         } else {
+
             // second and subsequent denials
             requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE,
                     Manifest.permission.CAMERA}, REQUEST_CODE_READ_PERMISSION);
+
+
 
         }
 
@@ -77,29 +99,41 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
+try {
+    switch (requestCode) {
 
-        switch (requestCode) {
-
-            case REQUEST_CODE_READ_PERMISSION:
+        case REQUEST_CODE_READ_PERMISSION:
 // gets called when we request the permission for the first time
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED && grantResults[2] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this, "yeah I am asking permission for the first time and you granted it", Toast.LENGTH_SHORT).show();
-                }
-          // on check & deny shouldshowrequestpermissionrationale will  be false
-                // as well as when I allow  permission shouldshowrequestpermissionrationale will be false
-                //
-                // else it will be true
-                else if (!(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE))
-                        && !(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) &&
-                        !(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA))) {
-                    Toast.makeText(this, "go to setting and accept the permission", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this, " oops I cannot open camera grant failed", Toast.LENGTH_LONG).show();
-                }
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED && grantResults[2] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "yeah I am asking permission for the first time and you granted it", Toast.LENGTH_SHORT).show();
+            }
+            // on check & deny shouldshowrequestpermissionrationale will  be false
+            // as well as when I allow  permission shouldshowrequestpermissionrationale will be false
+            //
+            // else it will be true
+            else if (!(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE))
+                    && !(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) &&
+                    !(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA))) {
+                Toast.makeText(this, "go to setting and accept the permission", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, " oops I cannot open camera grant failed", Toast.LENGTH_LONG).show();
+            }
 
-                return;
-        }
+            return;
+    }
+}
+catch (Exception ex){
+    AlertDialog.Builder mBuilder = new AlertDialog.Builder(MainActivity.this);
+    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
 
+                }
+            }
+    );
+    AlertDialog alert = mBuilder.create();
+    alert.show();
+}
 
     }
 

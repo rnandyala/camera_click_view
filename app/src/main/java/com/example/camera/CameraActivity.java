@@ -7,6 +7,7 @@ import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -81,6 +82,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -90,13 +92,13 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
 
     List<Size> mHighSpeedVideoresolutions;
 
-   // mVideoQuality = "HIGH";
-   // mVideResolution = "640*480";
+    // mVideoQuality = "HIGH";
+    // mVideResolution = "640*480";
 
     String mVideoUpdate;
 
     String mVideoQuality = "HIGH";
-    String mVideResolution ="640*480";
+    String mVideResolution = "640*480";
     String mImageQuality;
     String mImageResolution;
 
@@ -264,20 +266,35 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Intent mThumbnailIntent = new Intent();
 
-                        //
+                        try {
+                            Intent mThumbnailIntent = new Intent();
 
-                        if (!fileName.isEmpty()) {
+                            //
 
-                            mThumbnailIntent.putExtra("fileName", fileName);
+                            if (!fileName.isEmpty()) {
 
-                            mThumbnailIntent.putExtra("fromVideothubnail", mVideoUpdate);
+                                mThumbnailIntent.putExtra("fileName", fileName);
 
-                            setResult(RESULT_OK, mThumbnailIntent);
-                            CameraActivity.this.finish();
-                        } else {
-                            Toast.makeText(CameraActivity.this, "unable to save the file buddy", Toast.LENGTH_LONG).show();
+                                mThumbnailIntent.putExtra("fromVideothubnail", mVideoUpdate);
+
+                                setResult(RESULT_OK, mThumbnailIntent);
+                                CameraActivity.this.finish();
+                            } else {
+                                Toast.makeText(CameraActivity.this, "unable to save the file buddy", Toast.LENGTH_LONG).show();
+                            }
+
+                        } catch (Exception ex) {
+                            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+
+                                        }
+                                    }
+                            );
+                            AlertDialog alert = mBuilder.create();
+                            alert.show();
                         }
 
                     }
@@ -295,39 +312,59 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
                     @RequiresApi(api = Build.VERSION_CODES.M)
                     @Override
                     public void onClick(View v) {
-
-                        // The below method retruns the file object
-                        getFilesDir();
-
-
-                        // Where as this method return the path
-                        String dir = getFilesDir().getAbsolutePath();
-                        if (!fileName.isEmpty())
-                            try {
-                                // get the file path
-                                File mFile = new File(getApplicationContext().getExternalFilesDir(null), fileName);
-                                //get the imageUri
-                                tempImageUri = Uri.fromFile(mFile);
-                                // what is happening here?
-                                CameraActivity.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, tempImageUri));
+                        try {
+                            // The below method retruns the file object
+                            getFilesDir();
 
 
-                                closeCamera();
-                                reOpenCamera();
-                                //         mPrimayContainerImageView.setVisibility(View.GONE);
-                                mInternalMemoryImage.setVisibility(View.GONE);
-                                mDiscardImage.setVisibility(View.GONE);
-                                mAcceptImage.setVisibility(View.GONE);
+                            // Where as this method return the path
+                            String dir = getFilesDir().getAbsolutePath();
+                            if (!fileName.isEmpty())
+                                try {
+                                    // get the file path
+                                    File mFile = new File(getApplicationContext().getExternalFilesDir(null), fileName);
+                                    //get the imageUri
+                                    tempImageUri = Uri.fromFile(mFile);
+                                    // what is happening here?
+                                    CameraActivity.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, tempImageUri));
 
-                                mConstraintContainer.setVisibility(View.GONE);
 
-                                mIsImageAvailable = false;
-                                //         MediaStore.Images.Media.getBitmap(getApplicationContext().getContentResolver(), tempImageUri);
+                                    closeCamera();
+                                    reOpenCamera();
+                                    //         mPrimayContainerImageView.setVisibility(View.GONE);
+                                    mInternalMemoryImage.setVisibility(View.GONE);
+                                    mDiscardImage.setVisibility(View.GONE);
+                                    mAcceptImage.setVisibility(View.GONE);
 
-                            } catch (Exception ex) {
+                                    mConstraintContainer.setVisibility(View.GONE);
 
-                            }
+                                    mIsImageAvailable = false;
+                                    //         MediaStore.Images.Media.getBitmap(getApplicationContext().getContentResolver(), tempImageUri);
 
+                                } catch (Exception ex) {
+                                    AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                                    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int which) {
+
+                                                }
+                                            }
+                                    );
+                                    AlertDialog alert = mBuilder.create();
+                                    alert.show();
+                                }
+                        } catch (Exception ex) {
+                            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+
+                                        }
+                                    }
+                            );
+                            AlertDialog alert = mBuilder.create();
+                            alert.show();
+                        }
 
                     }
                 }
@@ -338,47 +375,87 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
     @Override
     protected void onStart() {
         super.onStart();
+        try {
+            SharedPreferences mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+            SharedPreferences mSharedResults = null;
+            mSharedResults = PreferenceManager.getDefaultSharedPreferences(this);
 
-        SharedPreferences mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences mSharedResults = null;
-        mSharedResults = PreferenceManager.getDefaultSharedPreferences(this);
+            mImageQuality = mSharedResults.getString("PREF_UPDATE_IMAGE_QUALITY", "");
+            mImageResolution = mSharedResults.getString("PREF_UPDATE_RESOULTION", "");
+            //    mVideoQuality = mSharedResults.getString("PREF_VIDEO_QUALITY", "");
+            // mVideResolution = mSharedResults.getString("PREF_VIDEO_RESOULTION", "");
 
-        mImageQuality = mSharedResults.getString("PREF_UPDATE_IMAGE_QUALITY", "");
-        mImageResolution = mSharedResults.getString("PREF_UPDATE_RESOULTION", "");
-    //    mVideoQuality = mSharedResults.getString("PREF_VIDEO_QUALITY", "");
-       // mVideResolution = mSharedResults.getString("PREF_VIDEO_RESOULTION", "");
+            if (mImageQuality.isEmpty() || mImageResolution.isEmpty() || mVideoQuality.isEmpty() || mVideResolution.isEmpty()) {
 
-        if (mImageQuality.isEmpty() || mImageResolution.isEmpty() || mVideoQuality.isEmpty() || mVideResolution.isEmpty()) {
-
-            mImageQuality = "100";
-            mImageResolution = "1920*1080";
+                mImageQuality = "100";
+                mImageResolution = "1920*1080";
 
 
+            }
+
+
+            mCameraSettingModel = new CameraSettingModel(mVideoQuality, mVideResolution, mImageQuality, mImageResolution);
+
+            Log.v("video", "image" + mVideoQuality + "\n" + mVideResolution + "\n" + mImageQuality + "\n" + mImageResolution);
+
+
+            IntentFilter mIntentFilterAction = new IntentFilter();
+            mIntentFilterAction.addAction("Custom_Intent");
+
+            LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, mIntentFilterAction);
+
+        } catch (Exception ex) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
         }
-
-
-        mCameraSettingModel = new CameraSettingModel(mVideoQuality, mVideResolution, mImageQuality, mImageResolution);
-
-        Log.v("video", "image" + mVideoQuality + "\n" + mVideResolution + "\n" + mImageQuality + "\n" + mImageResolution);
-
-
-        IntentFilter mIntentFilterAction = new IntentFilter();
-        mIntentFilterAction.addAction("Custom_Intent");
-
-        LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, mIntentFilterAction);
     }
 
     @Override
     protected void onPause() {
-        closeCamera();
-        stopBackgroundThread();
+        try {
+            closeCamera();
+            stopBackgroundThread();
+        } catch (Exception ex) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
+        }
+
         super.onPause();
     }
 
     @Override
     protected void onStop() {
-        closeCamera();
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mReceiver);
+        try {
+            closeCamera();
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(mReceiver);
+        } catch (Exception ex) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
+        }
         super.onStop();
     }
 
@@ -399,8 +476,21 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
         public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
             Log.d("camera2", "onSurfaceTextureavailable: w: " + width + "onSurfaceTextureavailable: h: " + height);
 
+            try {
+                openCamera(width, height);
 
-            openCamera(width, height);
+            } catch (Exception ex) {
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        }
+                );
+                AlertDialog alert = mBuilder.create();
+                alert.show();
+            }
         }
 
         @Override
@@ -431,6 +521,16 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
                 mBackgroundHandler = null;
             } catch (InterruptedException e) {
                 e.printStackTrace();
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                mBuilder.setMessage(e.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        }
+                );
+                AlertDialog alert = mBuilder.create();
+                alert.show();
             }
         }
     }
@@ -447,9 +547,22 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
     @Override
     protected void onResume() {
         super.onResume();
-        startBackGroundProcess();
-        reOpenCamera();
 
+        try {
+            startBackGroundProcess();
+            reOpenCamera();
+        } catch (Exception ex) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
+        }
 
     }
     /*
@@ -468,15 +581,29 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void reOpenCamera() {
+        try {
+
 // gets called when surface is already present
-        if (mTextureView.isAvailable()) {
-            openCamera(mTextureView.getWidth(), mTextureView.getHeight());
-            //  openCamera(640, 480);
-        } else {
-            // If surface is not present then below method gets called
-            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
+            if (mTextureView.isAvailable()) {
+                openCamera(mTextureView.getWidth(), mTextureView.getHeight());
+                //  openCamera(640, 480);
+            } else {
+                // If surface is not present then below method gets called
+                mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
 
 
+            }
+        } catch (Exception ex) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
         }
 
 
@@ -484,7 +611,22 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void openCamera(int width, int height) {
-        askPermission(width, height);
+        try {
+            askPermission(width, height);
+        } catch (Exception ex) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
+
+
+        }
         //      setUpCameraOutputs(width, height);
     }
 
@@ -498,26 +640,52 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
      */
 
     private void startBackGroundProcess() {
+        try {
+            if (mBackgroundThread == null) {
+                Log.d("backgroundThread", "backgroundthreadInstance is created");
 
-        if (mBackgroundThread == null) {
-            Log.d("backgroundThread", "backgroundthreadInstance is created");
+                mBackgroundThread = new HandlerThread("CameraBackground");
+                mBackgroundThread.start();
+                mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
+            }
 
-            mBackgroundThread = new HandlerThread("CameraBackground");
-            mBackgroundThread.start();
-            mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
+        } catch (Exception ex) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
         }
     }
 
     private BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            try {
+                mInternalMemoryImage.setVisibility(View.VISIBLE);
+                byte[] byteArray = intent.getByteArrayExtra("image");
+                displayCapturedImage(byteArray);
+                //     mCapturedImage
+                mDiscardImage.setVisibility(View.VISIBLE);
+                mAcceptImage.setVisibility(View.VISIBLE);
 
-            mInternalMemoryImage.setVisibility(View.VISIBLE);
-            byte[] byteArray = intent.getByteArrayExtra("image");
-            displayCapturedImage(byteArray);
-            //     mCapturedImage
-            mDiscardImage.setVisibility(View.VISIBLE);
-            mAcceptImage.setVisibility(View.VISIBLE);
+            } catch (Exception ex) {
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        }
+                );
+                AlertDialog alert = mBuilder.create();
+                alert.show();
+            }
         }
     };
 
@@ -539,10 +707,21 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        try {
+                            Intent mSettingIntent = new Intent(CameraActivity.this, CameraSettings.class);
+                            startActivityForResult(mSettingIntent, REQUEST_CODE_SETTINGS);
+                        } catch (Exception ex) {
+                            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
 
-                        Intent mSettingIntent = new Intent(CameraActivity.this, CameraSettings.class);
-                        startActivityForResult(mSettingIntent, REQUEST_CODE_SETTINGS);
-
+                                        }
+                                    }
+                            );
+                            AlertDialog alert = mBuilder.create();
+                            alert.show();
+                        }
 
                     }
                 }
@@ -550,38 +729,52 @@ public class CameraActivity extends AppCompatActivity implements ICameraFacing, 
         );
 
 
-
         mVideoRecorder.setOnClickListener(
                 new View.OnClickListener() {
                     @RequiresApi(api = Build.VERSION_CODES.M)
                     @Override
                     public void onClick(View v) {
-                        if (isVideorecording) {
-setMediaRecorderInit(isVideorecording, true);
-                        } else {
-                            // when videos is recording then
-                            isVideorecording = true;
-                            mVideoRecorder.setImageDrawable(getResources().getDrawable(android.R.drawable.presence_video_busy));
-                            startRecord();
-                            mMediaRecorder.start();
-                            mChronometer.setBase(SystemClock.elapsedRealtime()+30000);
-                            mChronometer.setVisibility(View.VISIBLE);
-                            mChronometer.start();
-                            MediaRecorder.OnInfoListener mMediaListener = new MediaRecorder.OnInfoListener() {
-                                @Override
-                                public void onInfo(MediaRecorder mr, int what, int extra) {
-
-                              if(MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED == what){
-setMediaRecorderInit(isVideorecording,false);
-
-                              }
-
-                                }
-                            };
-
-                            mMediaRecorder.setOnInfoListener(mMediaListener);
 
 
+                        try {
+                            if (isVideorecording) {
+                                setMediaRecorderInit(isVideorecording, true);
+                            } else {
+                                // when videos is recording then
+                                isVideorecording = true;
+                                mVideoRecorder.setImageDrawable(getResources().getDrawable(android.R.drawable.presence_video_busy));
+                                startRecord();
+                                mMediaRecorder.start();
+                                mChronometer.setBase(SystemClock.elapsedRealtime() + 30000);
+                                mChronometer.setVisibility(View.VISIBLE);
+                                mChronometer.start();
+                                MediaRecorder.OnInfoListener mMediaListener = new MediaRecorder.OnInfoListener() {
+                                    @Override
+                                    public void onInfo(MediaRecorder mr, int what, int extra) {
+
+                                        if (MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED == what) {
+                                            setMediaRecorderInit(isVideorecording, false);
+
+                                        }
+
+                                    }
+                                };
+
+                                mMediaRecorder.setOnInfoListener(mMediaListener);
+
+
+                            }
+                        } catch (Exception ex) {
+                            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+
+                                        }
+                                    }
+                            );
+                            AlertDialog alert = mBuilder.create();
+                            alert.show();
 
                         }
 
@@ -596,12 +789,27 @@ setMediaRecorderInit(isVideorecording,false);
                     @RequiresApi(api = Build.VERSION_CODES.M)
                     @Override
                     public void onClick(View v) {
-                        if (!mIsImageAvailable) {
-                            takePicture();
 
+                        try {
+                            if (!mIsImageAvailable) {
+                                takePicture();
+
+                            }
+
+                            Toast.makeText(CameraActivity.this, "wait", LENGTH_SHORT).show();
+
+                        } catch (Exception ex) {
+                            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+
+                                        }
+                                    }
+                            );
+                            AlertDialog alert = mBuilder.create();
+                            alert.show();
                         }
-
-                        Toast.makeText(CameraActivity.this, "wait", LENGTH_SHORT).show();
                     }
                 }
 
@@ -613,7 +821,20 @@ setMediaRecorderInit(isVideorecording,false);
                     @RequiresApi(api = Build.VERSION_CODES.M)
                     @Override
                     public void onClick(View v) {
-                        toggleCameraDisplayOrientation();
+                        try {
+                            toggleCameraDisplayOrientation();
+                        } catch (Exception ex) {
+                            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+
+                                        }
+                                    }
+                            );
+                            AlertDialog alert = mBuilder.create();
+                            alert.show();
+                        }
                     }
                 }
         );
@@ -639,49 +860,62 @@ setMediaRecorderInit(isVideorecording,false);
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void toggleCameraDisplayOrientation() {
+        try {
+            if (mCameraId.equals(mICameraFacing.getBackCameraId())) {
+                mCameraId = mICameraFacing.getFrontCameraId();
+                mICameraFacing.setCameraFrontFacing();
+                closeCamera();
+                reOpenCamera();
 
-        if (mCameraId.equals(mICameraFacing.getBackCameraId())) {
-            mCameraId = mICameraFacing.getFrontCameraId();
-            mICameraFacing.setCameraFrontFacing();
-            closeCamera();
-            reOpenCamera();
+            } else if (mCameraId.equals(mICameraFacing.getFrontCameraId())) {
+                mCameraId = mICameraFacing.getBackCameraId();
+                mICameraFacing.setCameraBackFacing();
+                closeCamera();
+                reOpenCamera();
+            }
+        } catch (Exception ex) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
 
-        } else if (mCameraId.equals(mICameraFacing.getFrontCameraId())) {
-            mCameraId = mICameraFacing.getBackCameraId();
-            mICameraFacing.setCameraBackFacing();
-            closeCamera();
-            reOpenCamera();
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
         }
     }
 
     private void initIntent() {
 
-        Boolean mPhoto = getIntent().getExtras().getBoolean("picture");
+        try {
+            Boolean mPhoto = getIntent().getExtras().getBoolean("picture");
 //Boolean mPhoto = true;
 
-        mVideoUpdate = getIntent().getStringExtra("fromVideothubnail");
+            mVideoUpdate = getIntent().getStringExtra("fromVideothubnail");
 
-        if (mVideoUpdate != null) {
-            // if it is coming from video then disable the switch cmaera otpion
+            if (mVideoUpdate != null) {
+                // if it is coming from video then disable the switch cmaera otpion
 
-            mOrientation.setVisibility(View.GONE);
+                mOrientation.setVisibility(View.GONE);
 
-        }
+            }
 
-        // Boolean mVideo = getIntent().getExtras().getBoolean("video");
+            // Boolean mVideo = getIntent().getExtras().getBoolean("video");
 // commented on may 4th
-  //      String isVideo = getIntent().getExtras().getString("");
+            //      String isVideo = getIntent().getExtras().getString("");
 
-        if (mPhoto != null && mPhoto) {
+            if (mPhoto != null && mPhoto) {
 
-            mCamera.setVisibility(View.VISIBLE);
-            mVideoRecorder.setVisibility(View.GONE);
-        } else {
+                mCamera.setVisibility(View.VISIBLE);
+                mVideoRecorder.setVisibility(View.GONE);
+            } else {
 
-            mVideoRecorder.setVisibility(View.VISIBLE);
-            mCamera.setVisibility(View.GONE);
+                mVideoRecorder.setVisibility(View.VISIBLE);
+                mCamera.setVisibility(View.GONE);
 
-        }
+            }
 /*
         if(getIntent().getExtras().getString(FormAction.VIDEO) != null) {
             String mFileName = getIntent().getExtras().getString(FormAction.VIDEO);
@@ -690,6 +924,18 @@ setMediaRecorderInit(isVideorecording,false);
 
             }
         }*/
+        } catch (Exception ex) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
+        }
 
 
     }
@@ -712,6 +958,7 @@ setMediaRecorderInit(isVideorecording,false);
 
     private void lockFocus() {
 
+
         try {
             // lock the focus AF - foucs
             mPreviewRequestBuilder.set(
@@ -731,6 +978,17 @@ setMediaRecorderInit(isVideorecording,false);
 
         } catch (CameraAccessException ex) {
             ex.printStackTrace();
+
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
         }
 
     }
@@ -761,9 +1019,31 @@ setMediaRecorderInit(isVideorecording,false);
 
 
             } catch (CameraAccessException e) {
+
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                mBuilder.setMessage(e.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        }
+                );
+                AlertDialog alert = mBuilder.create();
+                alert.show();
+
                 e.printStackTrace();
             } catch (InterruptedException e) {
-                throw new RuntimeException("Interrupted while trying to lock camera opening.", e);
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                mBuilder.setMessage(e.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        }
+                );
+                AlertDialog alert = mBuilder.create();
+                alert.show();
+                // throw new RuntimeException("Interrupted while trying to lock camera opening.", e);
             }
 
             // user granted permission
@@ -874,41 +1154,87 @@ setMediaRecorderInit(isVideorecording,false);
 
         @Override
         public void onOpened(@NonNull CameraDevice cameraDevice) {
-            // This method is called when the camera is opened.  We start camera preview here.
-            mCameraOpenCloseLock.release();
-            mCameraDevice = cameraDevice;
-            mMediaRecorder = new MediaRecorder();
 
-            if (isVideorecording) {
-                startRecord();
-                mMediaRecorder.start();
-                mChronometer.setBase(SystemClock.elapsedRealtime());
-                mChronometer.setVisibility(View.VISIBLE);
-                mChronometer.start();
-            } else {
+            try {
 
-                createCameraPreviewSession();
+                // This method is called when the camera is opened.  We start camera preview here.
+                mCameraOpenCloseLock.release();
+                mCameraDevice = cameraDevice;
+                mMediaRecorder = new MediaRecorder();
+
+                if (isVideorecording) {
+                    startRecord();
+                    mMediaRecorder.start();
+                    mChronometer.setBase(SystemClock.elapsedRealtime());
+                    mChronometer.setVisibility(View.VISIBLE);
+                    mChronometer.start();
+                } else {
+
+                    createCameraPreviewSession();
+                }
+            } catch (Exception ex) {
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        }
+                );
+                AlertDialog alert = mBuilder.create();
+                alert.show();
             }
         }
 
         @Override
         public void onDisconnected(@NonNull CameraDevice cameraDevice) {
-            mCameraOpenCloseLock.release();
-            cameraDevice.close();
-            mCameraDevice = null;
+            try {
+                mCameraOpenCloseLock.release();
+                cameraDevice.close();
+                mCameraDevice = null;
+            } catch (Exception ex) {
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        }
+                );
+                AlertDialog alert = mBuilder.create();
+                alert.show();
+            }
         }
 
         @Override
         public void onError(@NonNull CameraDevice cameraDevice, int error) {
             Log.d(TAG, "onError: " + error);
-            mCameraOpenCloseLock.release();
-            cameraDevice.close();
-            mCameraDevice = null;
-            Activity activity = CameraActivity.this;
-            if (null != activity) {
-                activity.finish();
+
+            try {
+                mCameraOpenCloseLock.release();
+                cameraDevice.close();
+                mCameraDevice = null;
+                Activity activity = CameraActivity.this;
+                if (null != activity) {
+                    activity.finish();
+                }
+
+            } catch (Exception ex) {
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        }
+                );
+                AlertDialog alert = mBuilder.create();
+                alert.show();
             }
+
+
         }
+
     };
 
 
@@ -1135,8 +1461,30 @@ setMediaRecorderInit(isVideorecording,false);
             Log.d(TAG, "setUpCameraOutputs: cameraId: " + mCameraId);
 
         } catch (CameraAccessException e) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(e.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
+
+
             e.printStackTrace();
         } catch (NullPointerException e) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(e.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
             // Currently an NPE is thrown when the Camera2API is used but not supported on the
             // device this code runs.
           /*
@@ -1148,39 +1496,62 @@ setMediaRecorderInit(isVideorecording,false);
 
     // set front and back facing camera ID's
     private void findCameraIds() {
-        Activity activity = CameraActivity.this;
-        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
-
         try {
-            // returns two integers which determines whether it is a front facing camera or a back facing camera
-            for (String cameraId : manager.getCameraIdList()) {
-                Log.d(TAG, "setCameraOrientation: CAMERA ID: " + cameraId);
-                if (cameraId == null) continue;
-                CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-                int facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+            Activity activity = CameraActivity.this;
+            CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+
+            try {
+                // returns two integers which determines whether it is a front facing camera or a back facing camera
+                for (String cameraId : manager.getCameraIdList()) {
+                    Log.d(TAG, "setCameraOrientation: CAMERA ID: " + cameraId);
+                    if (cameraId == null) continue;
+                    CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+                    int facing = characteristics.get(CameraCharacteristics.LENS_FACING);
 
 
-                if (facing == CameraCharacteristics.LENS_FACING_BACK) {
-                    //mCameraId = cameraId;
-                    //   mICameraFacing.
+                    if (facing == CameraCharacteristics.LENS_FACING_BACK) {
+                        //mCameraId = cameraId;
+                        //   mICameraFacing.
 
-                    mICameraFacing.setBackFacingCamera(cameraId);
+                        mICameraFacing.setBackFacingCamera(cameraId);
+                    }
+
+                    if (facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                        //  mCameraId = cameraId;
+
+                        mICameraFacing.setFrontFacingCamera(cameraId);
+                    }
+
+                    // for the first time launch we will set the camera to front facing
+
+                    mICameraFacing.setCameraBackFacing();
+
+                    mCameraId = mICameraFacing.getBackCameraId();
                 }
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                mBuilder.setMessage(e.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
 
-                if (facing == CameraCharacteristics.LENS_FACING_FRONT) {
-                    //  mCameraId = cameraId;
-
-                    mICameraFacing.setFrontFacingCamera(cameraId);
-                }
-
-                // for the first time launch we will set the camera to front facing
-
-                mICameraFacing.setCameraBackFacing();
-
-                mCameraId = mICameraFacing.getBackCameraId();
+                            }
+                        }
+                );
+                AlertDialog alert = mBuilder.create();
+                alert.show();
             }
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
+        } catch (Exception ex) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
         }
     }
 
@@ -1194,53 +1565,112 @@ setMediaRecorderInit(isVideorecording,false);
             = new CameraCaptureSession.CaptureCallback() {
 
         private void process(CaptureResult result) {
-            switch (mState) {
-                case STATE_PREVIEW: {
-                    // We have nothing to do when the camera preview is working normally.
-                    break;
-                }
 
-                case STATE_WAITING_LOCK: {
-                    Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
-                    if (afState == null) {
-                        captureStillPicture();
-                    } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
-                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
-                        // CONTROL_AE_STATE can be null on some devices
-                        Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-                        if (aeState == null ||
-                                aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
-                            mState = STATE_PICTURE_TAKEN;
-                            captureStillPicture();
-                        } else {
-                            runPrecaptureSequence();
+            try {
+
+                switch (mState) {
+                    case STATE_PREVIEW: {
+                        // We have nothing to do when the camera preview is working normally.
+                        break;
+                    }
+
+                    case STATE_WAITING_LOCK: {
+
+                        try {
+                            Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
+                            if (afState == null) {
+                                captureStillPicture();
+                            } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
+                                    CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
+                                // CONTROL_AE_STATE can be null on some devices
+                                Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                                if (aeState == null ||
+                                        aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
+                                    mState = STATE_PICTURE_TAKEN;
+                                    captureStillPicture();
+                                } else {
+                                    runPrecaptureSequence();
+                                }
+                            } else if (afState == CaptureResult.CONTROL_AF_STATE_INACTIVE) {
+                                mState = STATE_PICTURE_TAKEN;
+                                captureStillPicture();
+                            }
+                            break;
+                        } catch (Exception ex) {
+                            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+
+                                        }
+                                    }
+                            );
+                            AlertDialog alert = mBuilder.create();
+                            alert.show();
                         }
-                    } else if (afState == CaptureResult.CONTROL_AF_STATE_INACTIVE) {
-                        mState = STATE_PICTURE_TAKEN;
-                        captureStillPicture();
                     }
-                    break;
-                }
-                case STATE_WAITING_PRECAPTURE: {
-                    // CONTROL_AE_STATE can be null on some devices
-                    Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-                    if (aeState == null ||
-                            aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
-                            aeState == CaptureRequest.CONTROL_AE_STATE_FLASH_REQUIRED) {
-                        mState = STATE_WAITING_NON_PRECAPTURE;
-                    }
-                    break;
-                }
-                case STATE_WAITING_NON_PRECAPTURE: {
-                    // CONTROL_AE_STATE can be null on some devices
-                    Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-                    if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
-                        mState = STATE_PICTURE_TAKEN;
-                        captureStillPicture();
-                    }
-                    break;
-                }
+                    case STATE_WAITING_PRECAPTURE: {
 
+                        try {
+                            // CONTROL_AE_STATE can be null on some devices
+                            Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                            if (aeState == null ||
+                                    aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
+                                    aeState == CaptureRequest.CONTROL_AE_STATE_FLASH_REQUIRED) {
+                                mState = STATE_WAITING_NON_PRECAPTURE;
+                            }
+
+
+                            break;
+                        } catch (Exception ex) {
+                            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+
+                                        }
+                                    }
+                            );
+                            AlertDialog alert = mBuilder.create();
+                            alert.show();
+                        }
+                    }
+                    case STATE_WAITING_NON_PRECAPTURE: {
+
+                        try {
+                            // CONTROL_AE_STATE can be null on some devices
+                            Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                            if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
+                                mState = STATE_PICTURE_TAKEN;
+                                captureStillPicture();
+                            }
+                        } catch (Exception ex) {
+                            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+
+                                        }
+                                    }
+                            );
+                            AlertDialog alert = mBuilder.create();
+                            alert.show();
+                        }
+                        break;
+                    }
+
+                }
+            } catch (Exception ex) {
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        }
+                );
+                AlertDialog alert = mBuilder.create();
+                alert.show();
             }
         }
 
@@ -1248,14 +1678,43 @@ setMediaRecorderInit(isVideorecording,false);
         public void onCaptureProgressed(@NonNull CameraCaptureSession session,
                                         @NonNull CaptureRequest request,
                                         @NonNull CaptureResult partialResult) {
-            process(partialResult);
+
+            try {
+                process(partialResult);
+            } catch (Exception ex) {
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        }
+                );
+                AlertDialog alert = mBuilder.create();
+                alert.show();
+            }
+
         }
 
         @Override
         public void onCaptureCompleted(@NonNull CameraCaptureSession session,
                                        @NonNull CaptureRequest request,
                                        @NonNull TotalCaptureResult result) {
-            process(result);
+            try {
+                process(result);
+            } catch (Exception ex) {
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        }
+                );
+                AlertDialog alert = mBuilder.create();
+                alert.show();
+            }
+
         }
 
     };
@@ -1275,6 +1734,18 @@ setMediaRecorderInit(isVideorecording,false);
             mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback,
                     mBackgroundHandler);
         } catch (CameraAccessException e) {
+
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(e.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
+
             e.printStackTrace();
         }
     }
@@ -1286,6 +1757,7 @@ setMediaRecorderInit(isVideorecording,false);
         try {
 
             final Activity activity = CameraActivity.this;
+
             if (null == activity || null == mCameraDevice) {
                 return;
             }
@@ -1324,6 +1796,16 @@ setMediaRecorderInit(isVideorecording,false);
             mCaptureSession.capture(captureBuilder.build(), CaptureCallback, null);
 
         } catch (CameraAccessException e) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(e.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
             e.printStackTrace();
         }
     }
@@ -1339,6 +1821,17 @@ setMediaRecorderInit(isVideorecording,false);
             mCaptureSession.setRepeatingRequest(mPreviewRequest, mCaptureCallback, mBackgroundHandler);
 
         } catch (CameraAccessException e) {
+
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(e.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
             e.printStackTrace();
         }
     }
@@ -1434,7 +1927,16 @@ setMediaRecorderInit(isVideorecording,false);
                     }, null
             );
         } catch (CameraAccessException e) {
-            e.printStackTrace();
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(e.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
         }
     }
 
@@ -1476,8 +1978,29 @@ setMediaRecorderInit(isVideorecording,false);
                     }, null);
 
         } catch (IOException e) {
+
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(e.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
             e.printStackTrace();
         } catch (CameraAccessException e) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(e.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
             e.printStackTrace();
         }
 
@@ -1488,9 +2011,11 @@ setMediaRecorderInit(isVideorecording,false);
         @Override
         public void onImageAvailable(ImageReader reader) {
 
-            if (!mIsImageAvailable) {
+            try {
 
-                mCapturedImage = reader.acquireNextImage();
+                if (!mIsImageAvailable) {
+
+                    mCapturedImage = reader.acquireNextImage();
 
 
 
@@ -1507,24 +2032,36 @@ and then get bitmap using decodeByteArray
                 buffer.get(bytes);
                 Bitmap myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, null);*/
 
-                if (mCapturedImage != null) {
-                    Log.d(TAG, "onImageAvailable: captured image width: " + mCapturedImage.getWidth());
-                    Log.d(TAG, "onImageAvailable: captured image height: " + mCapturedImage.getHeight());
+                    if (mCapturedImage != null) {
+                        Log.d(TAG, "onImageAvailable: captured image width: " + mCapturedImage.getWidth());
+                        Log.d(TAG, "onImageAvailable: captured image height: " + mCapturedImage.getHeight());
 
-                    String[] mArrayOfRes = mImageResolution.split("[*]+");
+                        String[] mArrayOfRes = mImageResolution.split("[*]+");
 
-                    int width = Integer.parseInt(mArrayOfRes[0]);
-                    int height = Integer.parseInt(mArrayOfRes[1]);
-
-
-                    ReducePixelImage mReducedPixelImage = new ReducePixelImage(mCapturedImage, width, height, CameraActivity.this);
+                        int width = Integer.parseInt(mArrayOfRes[0]);
+                        int height = Integer.parseInt(mArrayOfRes[1]);
 
 
-                    mBackgroundHandler.post(mReducedPixelImage);
-                    // Before saving picture to the storage I want to reduce the pixel s
-                    saveTempImageToStorage();
+                        ReducePixelImage mReducedPixelImage = new ReducePixelImage(mCapturedImage, width, height, CameraActivity.this);
 
+
+                        mBackgroundHandler.post(mReducedPixelImage);
+                        // Before saving picture to the storage I want to reduce the pixel s
+                        saveTempImageToStorage();
+
+                    }
                 }
+            } catch (Exception ex) {
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        }
+                );
+                AlertDialog alert = mBuilder.create();
+                alert.show();
             }
             // when image is available in the image reader then this gets triggered..
 
@@ -1624,34 +2161,50 @@ and then get bitmap using decodeByteArray
         final ICallback callback = new ICallback() {
             @Override
             public void done(Exception e) {
-                if (e == null) {
-                    Log.d(TAG, "onImageSavedCallback: image saved!");
 
-                    mIsImageAvailable = true;
+                try {
+
+                    if (e == null) {
+                        Log.d(TAG, "onImageSavedCallback: image saved!");
+
+                        mIsImageAvailable = true;
 
 
-                    Intent i = new Intent(CameraActivity.this, ReadImage.class);
-                    if (fileName != null) {
-                        i.putExtra("fileNameOfImage", fileName);
+                        Intent i = new Intent(CameraActivity.this, ReadImage.class);
+                        if (fileName != null) {
+                            i.putExtra("fileNameOfImage", fileName);
+                        } else {
+                            Toast.makeText(CameraActivity.this, "image not available in the storage", Toast.LENGTH_LONG);
+                        }
+                        startService(i);
+                        if (mCapturedImage != null) {
+                            mCapturedImage.close();
+                        }
+
                     } else {
-                        Toast.makeText(CameraActivity.this, "image not available in the storage", Toast.LENGTH_LONG);
+                        Log.d(TAG, "onImageSavedCallback: error saving image: " + e.getMessage());
+                        showSnackBar("Error displaying image", Snackbar.LENGTH_SHORT);
                     }
-                    startService(i);
-                    if (mCapturedImage != null) {
-                        mCapturedImage.close();
-                    }
+                } catch (Exception ex) {
 
-                } else {
-                    Log.d(TAG, "onImageSavedCallback: error saving image: " + e.getMessage());
-                    showSnackBar("Error displaying image", Snackbar.LENGTH_SHORT);
+                    AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                }
+                            }
+                    );
+                    AlertDialog alert = mBuilder.create();
+                    alert.show();
+
                 }
             }
         };
 
 
         ImageSaver imageSaver = new ImageSaver(
-                mCapturedImage
-                ,
+                mCapturedImage,
                 CameraActivity.this.getExternalFilesDir(null),
                 callback, this, mImageQuality
         );
@@ -1703,13 +2256,11 @@ closeCamera();
         @Override
         public void run() {
             if (mCapturedImage != null) {
-
-
-                ByteBuffer buffer = mCapturedImage.getPlanes()[0].getBuffer();
-                byte[] bytes = new byte[buffer.remaining()];
-                buffer.get(bytes);
                 FileOutputStream output = null;
                 try {
+                    ByteBuffer buffer = mCapturedImage.getPlanes()[0].getBuffer();
+                    byte[] bytes = new byte[buffer.remaining()];
+                    buffer.get(bytes);
 
                     Bitmap mBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, null);
 
@@ -1758,6 +2309,8 @@ closeCamera();
 
     private void showStillshotContainer() {
         closeCamera();
+
+
         mConstraintContainer.setVisibility(View.VISIBLE);
 
 
@@ -1789,32 +2342,73 @@ closeCamera();
                 mImageReader = null;
             }
         } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage("Interrupted while trying to lock camera closing." + "\n" + e.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
+
+            //     throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
         } finally {
-            mCameraOpenCloseLock.release();
+
+            try {
+                mCameraOpenCloseLock.release();
+            } catch (Exception ex) {
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        }
+                );
+                AlertDialog alert = mBuilder.create();
+                alert.show();
+            }
+
+
         }
     }
 
     // display captured picture
     private void displayCapturedImage(byte[] mByteArrayImage) {
         Log.d(TAG, "displayCaptureImage: displaying stillshot image.");
-        final Activity activity = CameraActivity.this;
-        if (activity != null) {
-            activity.runOnUiThread(() -> {
 
-                        RequestOptions options = new RequestOptions()
-                                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                                .skipMemoryCache(true);
+        try {
+            final Activity activity = CameraActivity.this;
+            if (activity != null) {
+                activity.runOnUiThread(() -> {
 
-                        Glide.with(activity)
-                                .setDefaultRequestOptions(options)
-                                .load(mByteArrayImage)
-                                .into(mInternalMemoryImage);
-                        showStillshotContainer();
+                            RequestOptions options = new RequestOptions()
+                                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                                    .skipMemoryCache(true);
+
+                            Glide.with(activity)
+                                    .setDefaultRequestOptions(options)
+                                    .load(mByteArrayImage)
+                                    .into(mInternalMemoryImage);
+                            showStillshotContainer();
+                        }
+
+
+                );
+            }
+        } catch (Exception ex) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
                     }
-
-
             );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
         }
     }
 
@@ -1883,31 +2477,33 @@ closeCamera();
     }
 
     private void setUpMediaRecorder() throws IOException {
-//  CameraActivity.this.getExternalFilesDir(null)
-        //   getExternalFilesDir(null).getAbsolutePath();
-        Date mCurrentDate = new Date();
-        SimpleDateFormat formatter = new SimpleDateFormat("dd-M-yyyy hh:mm:ss.SSS");
-        String mCurrentDateTime = formatter.format(mCurrentDate);
-       File mFile =  new File(getExternalFilesDir(null), mCurrentDateTime+"temp_video.mp4");
-     //   File mFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), mCurrentDateTime+"temp.mp4");
 
-        //   File file = new File(getExternalFilesDir(null), "temp_video.mp4");
-        mVideoFileName = mFile.getAbsolutePath();
-        mMediaRecorder.setOrientationHint(90);
-        mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-        mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mMediaRecorder.setMaxDuration(30000);
-        // mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        try {
+//  CameraActivity.this.getExternalFilesDir(null)
+            //   getExternalFilesDir(null).getAbsolutePath();
+            Date mCurrentDate = new Date();
+            SimpleDateFormat formatter = new SimpleDateFormat("dd-M-yyyy hh:mm:ss.SSS");
+            String mCurrentDateTime = formatter.format(mCurrentDate);
+            File mFile = new File(getExternalFilesDir(null), mCurrentDateTime + "temp_video.mp4");
+            //   File mFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), mCurrentDateTime+"temp.mp4");
+
+            //   File file = new File(getExternalFilesDir(null), "temp_video.mp4");
+            mVideoFileName = mFile.getAbsolutePath();
+            mMediaRecorder.setOrientationHint(90);
+            mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+            mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            mMediaRecorder.setMaxDuration(30000);
+            // mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
 
 // dc
 
-        //  CamcorderProfile.QUALITY_480P;
+            //  CamcorderProfile.QUALITY_480P;
 
 //CamcorderProfile.QUALITY_480P;
 
 //CamcorderProfile.QUALITY_2160P;
 
-        //CamcorderProfile.QUALITY_2160P;
+            //CamcorderProfile.QUALITY_2160P;
 
 
 //640,480
@@ -1991,25 +2587,36 @@ closeCamera();
             */
 
 
+            }
 
+
+            mMediaRecorder.setOutputFile(mVideoFileName);
+            mMediaRecorder.setVideoEncodingBitRate(1000000);
+            mMediaRecorder.setVideoFrameRate(30);
+
+            //  mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+
+            //     mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+            //    mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            // mMediaRecorder.setOrientationHint();
+
+            if (mCameraId.equals(mICameraFacing.getFrontCameraId()))
+                mMediaRecorder.setOrientationHint(270);
+
+            mMediaRecorder.prepare();
+
+        } catch (Exception ex) {
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
         }
-
-
-        mMediaRecorder.setOutputFile(mVideoFileName);
-        mMediaRecorder.setVideoEncodingBitRate(1000000);
-        mMediaRecorder.setVideoFrameRate(30);
-
-        //  mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
-
-        //     mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-        //    mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-        // mMediaRecorder.setOrientationHint();
-
-        if (mCameraId.equals(mICameraFacing.getFrontCameraId()))
-            mMediaRecorder.setOrientationHint(270);
-
-        mMediaRecorder.prepare();
-
 
     }
 
@@ -2044,48 +2651,60 @@ closeCamera();
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                try {
+                    if (isVideorecording) {
+                        //          mChronometer.setVisibility(View.GONE);
+                        mChronometer.stop();
 
-                if (isVideorecording) {
-                    //          mChronometer.setVisibility(View.GONE);
-                    mChronometer.stop();
 
-
-                      mChronometer.setVisibility(View.GONE);
+                        mChronometer.setVisibility(View.GONE);
 // when video is not being recorded then
-                    videoRecording();
-if(isStoppedBeforeMaxLimit)
-                   mMediaRecorder.stop();
+                        videoRecording();
+                        if (isStoppedBeforeMaxLimit)
+                            mMediaRecorder.stop();
 
-                          mMediaRecorder.reset();
-                          setVideoRecording();
-                  // this.isVideorecording = false;
+                        mMediaRecorder.reset();
+                        setVideoRecording();
+                        // this.isVideorecording = false;
 ///storage/emulated/0/Movies/23-4-2020 08:24:43.195temp.mp4
 
-              //      MediaStore.Video.
+                        //      MediaStore.Video.
 
 
-                    File mFile =  new File(getExternalFilesDir(null), mVideoFileName);
-             //       File mFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), mVideoFileName);
-                    final int THUMBSIZE = 400;
-                    //final Bitmap bitmap = ThumbnailUtils.createVideoThumbnail(recordedFile, MediaStore.Video.Thumbnails.MINI_KIND);
+                        File mFile = new File(getExternalFilesDir(null), mVideoFileName);
+                        //       File mFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), mVideoFileName);
+                        final int THUMBSIZE = 400;
+                        //final Bitmap bitmap = ThumbnailUtils.createVideoThumbnail(recordedFile, MediaStore.Video.Thumbnails.MINI_KIND);
 
-                    //  CancellationSignal mCancelSignal = new CancellationSignal();
-                    fileName = mFile.getAbsolutePath();
+                        //  CancellationSignal mCancelSignal = new CancellationSignal();
+                        fileName = mFile.getAbsolutePath();
 
-                    Bitmap mThumbImage = ThumbnailUtils.createVideoThumbnail(mVideoFileName, MediaStore.Video.Thumbnails.MINI_KIND);
+                        Bitmap mThumbImage = ThumbnailUtils.createVideoThumbnail(mVideoFileName, MediaStore.Video.Thumbnails.MINI_KIND);
 
-                    //   setmThumbImage(mThumbImage);
-                    mConstraintContainer.setVisibility(View.VISIBLE);
-                    mInternalMemoryImage.setImageBitmap(mThumbImage);
-                    mInternalMemoryImage.setVisibility(View.VISIBLE);
-                    mDiscardImage.setVisibility(View.VISIBLE);
-                    mAcceptImage.setVisibility(View.VISIBLE);
+                        //   setmThumbImage(mThumbImage);
+                        mConstraintContainer.setVisibility(View.VISIBLE);
+                        mInternalMemoryImage.setImageBitmap(mThumbImage);
+                        mInternalMemoryImage.setVisibility(View.VISIBLE);
+                        mDiscardImage.setVisibility(View.VISIBLE);
+                        mAcceptImage.setVisibility(View.VISIBLE);
 
-                    mVideoFileName.toCharArray();
+                        mVideoFileName.toCharArray();
 
-                    fileName = mVideoFileName;
-                    //Drawable img = getResources().getDrawable(android.R.d)
-                    mVideoRecorder.setImageDrawable(getResources().getDrawable(android.R.drawable.presence_video_online));
+                        fileName = mVideoFileName;
+                        //Drawable img = getResources().getDrawable(android.R.d)
+                        mVideoRecorder.setImageDrawable(getResources().getDrawable(android.R.drawable.presence_video_online));
+                    }
+                } catch (Exception ex) {
+                    AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraActivity.this);
+                    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                }
+                            }
+                    );
+                    AlertDialog alert = mBuilder.create();
+                    alert.show();
                 }
             }
         });

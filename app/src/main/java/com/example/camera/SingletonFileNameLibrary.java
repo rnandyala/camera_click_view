@@ -1,5 +1,8 @@
 package com.example.camera;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+
 import java.util.ArrayList;
 
 public class SingletonFileNameLibrary {
@@ -12,13 +15,17 @@ public class SingletonFileNameLibrary {
 
 
     public static SingletonFileNameLibrary getInstance(){
-
-       if(mSingleTonFileNameLibrary == null) {
-           mSingleTonFileNameLibrary = new SingletonFileNameLibrary();
-       return mSingleTonFileNameLibrary;
-       }
-        else
-     return   mSingleTonFileNameLibrary;
+try {
+    if (mSingleTonFileNameLibrary == null) {
+        mSingleTonFileNameLibrary = new SingletonFileNameLibrary();
+        return mSingleTonFileNameLibrary;
+    } else
+        return mSingleTonFileNameLibrary;
+}
+catch(Exception ex){
+ex.getMessage();
+}
+return  null;
     }
 
     public ArrayList<String> getListOfFileName(){
@@ -28,9 +35,12 @@ public class SingletonFileNameLibrary {
     }
 
     public void setmListOfFileNames(String mFileName){
-
-        mListOfFileNames.add(mFileName);
-
+try {
+    mListOfFileNames.add(mFileName);
+}
+catch(Exception ex){
+    ex.getMessage();
+}
     }
 
 }

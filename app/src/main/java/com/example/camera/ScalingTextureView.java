@@ -1,11 +1,15 @@
 package com.example.camera;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.opengl.Matrix;
 import android.util.AttributeSet;
 import android.view.ScaleGestureDetector;
 import android.view.TextureView;
 
+
+// throwing alert for textureview
 public class ScalingTextureView extends TextureView {
 Matrix mMartrix;
     int mRatioWidth = 0;
@@ -32,25 +36,37 @@ Matrix mMartrix;
     // aspect ratio for camera preview based on screen size textureView gets scaled
     // textureview acts as surface for camera
     public void setAspectRatio(int width, int height) {
-        if (width < 0 || height < 0) {
-            throw new IllegalArgumentException("size cannot be negative");
-        }
-        mRatioWidth = width;
-        mRatioHeight = height;
-        requestLayout();
+   try {
+
+       if (width < 0 || height < 0) {
+           throw new IllegalArgumentException("size cannot be negative");
+       }
+       mRatioWidth = width;
+       mRatioHeight = height;
+       requestLayout();
+
+   }
+   catch(Exception ex){
+   ex.printStackTrace();
+   }
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+try {
+    int width = MeasureSpec.getSize(widthMeasureSpec);
+    int height = MeasureSpec.getSize(heightMeasureSpec);
 
-        int width = MeasureSpec.getSize(widthMeasureSpec);
-        int height = MeasureSpec.getSize(heightMeasureSpec);
+    if (0 == mRatioWidth || 0 == mRatioHeight) {
+        setMeasuredDimension(width, height);
+    }
+    setMeasuredDimension(width, height);
 
-        if (0 == mRatioWidth || 0 == mRatioHeight) {
-            setMeasuredDimension(width, height);
-        }
-        setMeasuredDimension(width,height);
+}
+catch (Exception ex){
+    ex.printStackTrace();
+}
     }
 
 

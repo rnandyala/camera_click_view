@@ -1,5 +1,7 @@
 package com.example.camera;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -24,10 +26,27 @@ public class CameraSettings extends AppCompatActivity {
         setContentView(R.layout.activity_preference_settings);
 
         mClosePreference = findViewById(R.id.mClosePreference);
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(android.R.id.content, new CameraPreference())
-                .commit();
+
+
+       try {
+           getSupportFragmentManager()
+                   .beginTransaction()
+                   .replace(android.R.id.content, new CameraPreference())
+                   .commit();
+
+       }
+       catch (Exception ex){
+           AlertDialog.Builder mBuilder = new AlertDialog.Builder(CameraSettings.this);
+           mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                       @Override
+                       public void onClick(DialogInterface dialog, int which) {
+
+                       }
+                   }
+           );
+           AlertDialog alert = mBuilder.create();
+           alert.show();
+       }
 
 
 
@@ -46,6 +65,7 @@ public class CameraSettings extends AppCompatActivity {
         @Override
         public void onCreate(@Nullable Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
+
             addPreferencesFromResource(R.xml.camera_settings);
         }
 

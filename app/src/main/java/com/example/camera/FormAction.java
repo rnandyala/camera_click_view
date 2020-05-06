@@ -14,7 +14,6 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -30,7 +29,7 @@ import java.util.ArrayList;
 public class FormAction extends AppCompatActivity implements View.OnClickListener {
 
 
-    Button mJustCameraButton;
+    ImageView mJustCameraButton;
 
     String mVideoFileName;
     String mPictureFileName;
@@ -40,7 +39,7 @@ public class FormAction extends AppCompatActivity implements View.OnClickListene
 
     boolean isCameraPicAvailable = true;
     ImageView mTakePicture;
-    ImageButton mTakeVideo;
+    ImageView mTakeVideo;
 
     ImageView[] mArrayOFImages;
 
@@ -65,9 +64,8 @@ public class FormAction extends AppCompatActivity implements View.OnClickListene
 
 
     public boolean checkHardwareLevel() {
+        try{
         CameraManager mCameramanager = (CameraManager) FormAction.this.getSystemService(Context.CAMERA_SERVICE);
-
-        try {
             for (String mCameraId : mCameramanager.getCameraIdList()) {
                 CameraCharacteristics mCameraCharacteristics = mCameramanager.getCameraCharacteristics(mCameraId);
                 Object mHardwareLevel = mCameraCharacteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
@@ -75,7 +73,26 @@ public class FormAction extends AppCompatActivity implements View.OnClickListene
                 return mHardwareLevel.toString().contains("2");
             }
         } catch (CameraAccessException e) {
-            e.printStackTrace();
+
+
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(this);
+            mBuilder.setMessage(e.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+
+                            e.getMessage();
+                            dialog.dismiss();
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
+
+
+         //   e.printStackTrace();
+
+
         }
         return false;
     }
@@ -90,26 +107,37 @@ public class FormAction extends AppCompatActivity implements View.OnClickListene
             case R.id.mJustCamera:
 
 
+              //  throw new RuntimeException("test error");
+
+
                 try {
+
+
 
                     // If user tries to take more than 5 photos then do not allow the user
                     if (isCameraPicAvailable) {
+
+/*
                         if (checkHardwareLevel()) {
-                            Toast.makeText(FormAction.this, "CAMERA2 is unavilable", Toast.LENGTH_LONG);
+                            Toast.makeText(FormAction.this, "CAMERA2 is unavilable", Toast.LENGTH_LONG).show();
                         } else {
 
 
-                            Intent i = new Intent(FormAction.this, TakePictureOrVideo.class);
-                            // This is used to determine whether it is a camera or  video
 
-                            // throw new RuntimeException("camera not working::");
-
-                            i.putExtra(CAMERA, CLICK_TYPE1);
-                            startActivityForResult(i, RequestThumbnailPicture);
-                        }
+                        }*/
                         ;
+
+
+                        Intent i = new Intent(FormAction.this, TakePictureOrVideo.class);
+                        // This is used to determine whether it is a camera or  video
+
+                        // throw new RuntimeException("camera not working::");
+
+                        i.putExtra(CAMERA, CLICK_TYPE1);
+                        startActivityForResult(i, RequestThumbnailPicture);
+
                     } else {
-                        Toast.makeText(FormAction.this, "total count reached", Toast.LENGTH_SHORT);
+                        Toast.makeText(FormAction.this, "total count reached", Toast.LENGTH_SHORT).show();
                     }
 
                 } catch (Exception ex) {
@@ -135,9 +163,9 @@ public class FormAction extends AppCompatActivity implements View.OnClickListene
                 break;
 
 
-            case R.id.take_picture:
+          //  case R.id.take_picture:
 
-                break;
+            //    break;
 
             case R.id.take_video:
 
@@ -250,82 +278,102 @@ catch(Exception ex){
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        // when delete or update are tapped
-        if (requestCode == DELETE_IMAGE && resultCode == RESULT_OK) {
-            boolean isUpdate = data.getBooleanExtra("updatescreen", false);
-            if (isUpdate) {
-                String mFileName = data.getStringExtra("fileName");
-                // adding newfile name
-                // getting filename from image and deleting the filename from list
-                for (int i = 0; i < mArrayOFImages.length; i++) {
-                    if (mArrayOFImages[i].getTag(R.string.image) != null) {
-                        if (mArrayOFImages[i].getTag(R.string.image).equals(data.getIntExtra("imageID", 0))) {
-                            // adding new file name to the list
-                            SingletonFileNameLibrary.getInstance().setmListOfFileNames(mFileName);
-                            // getting the file name for the image that is being updated
-                            String mPreviousFileName = (String) mArrayOFImages[i].getTag(R.string.tag_name);
-                            // deleting the filename from the list
-                            if (SingletonFileNameLibrary.getInstance().getListOfFileName().contains(mPreviousFileName)) {
-                                SingletonFileNameLibrary.getInstance().getListOfFileName().remove(mPreviousFileName);
-                            }
-                        }
-                    }
-                }
 
 
-                if (mFileName != null) {
-                    ArrayList<String> mListOfFileNames = SingletonFileNameLibrary.getInstance().getListOfFileName();
-                    mListOfFileNames.size();
-                    // disable click for camera icon
-                    if (mListOfFileNames.size() >= 5) {
-                        isCameraPicAvailable = false;
-                    }
-                    for (int i = 0; i < mListOfFileNames.size(); i++) {
-
-                        File mFile = new File(FormAction.this.getExternalFilesDir(null), mListOfFileNames.get(i));
-                        final int THUMBSIZE = 400;
-
-                        mBitMapImage = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(mFile.toString()), THUMBSIZE, THUMBSIZE);
-
-                        mArrayOFImages[i].setImageBitmap(mBitMapImage);
-
-
-                        // adding file name twice as well as  position
-                        mArrayOFImages[i].setTag(R.string.tag_name, mListOfFileNames.get(i));
-                        mArrayOFImages[i].setTag(R.string.image, i);
-                        //    mArrayOFImages[i].setTag(R.string.filename, mFileName);
-                        mArrayOFImages[i].setOnClickListener(this);
-                        mArrayOFImages[i].setVisibility(View.VISIBLE);
-                    }
-                } else {
-                    Log.v("FileName", "isMissing & current listOfFileNames size is" + SingletonFileNameLibrary.getInstance().getListOfFileName().size());
-                }
-
-            }
+  try {
+      // when delete or update are tapped
+      if (requestCode == DELETE_IMAGE && resultCode == RESULT_OK) {
+          boolean isUpdate = data.getBooleanExtra("updatescreen", false);
+          if (isUpdate) {
+              String mFileName = data.getStringExtra("fileName");
+              // adding newfile name
+              // getting filename from image and deleting the filename from list
+              for (int i = 0; i < mArrayOFImages.length; i++) {
+                  if (mArrayOFImages[i].getTag(R.string.image) != null) {
+                      if (mArrayOFImages[i].getTag(R.string.image).equals(data.getIntExtra("imageID", 0))) {
+                          // adding new file name to the list
+                          SingletonFileNameLibrary.getInstance().setmListOfFileNames(mFileName);
+                          // getting the file name for the image that is being updated
+                          String mPreviousFileName = (String) mArrayOFImages[i].getTag(R.string.tag_name);
+                          // deleting the filename from the list
+                          if (SingletonFileNameLibrary.getInstance().getListOfFileName().contains(mPreviousFileName)) {
+                              SingletonFileNameLibrary.getInstance().getListOfFileName().remove(mPreviousFileName);
+                          }
+                      }
+                  }
+              }
 
 
-            // user taps on delete
-            // get image position for that particular image from(TakePictureOrVideoActivity) and
-            // delete the file name from the list of filenames
-            // make camera available
-            // make the imageview gone
-            else {
-                for (int i = 0; i < mArrayOFImages.length; i++) {
-                    if (mArrayOFImages[i].getTag(R.string.image) != null) {
-                        // getting tagID to delete or make view gone as well as remove file name from to make camera button available
-                        if (mArrayOFImages[i].getTag(R.string.image).equals(data.getIntExtra("imageToDelete", 0))) {
-                            if (SingletonFileNameLibrary.getInstance().getListOfFileName().contains(mPictureFileName)) {
-                                SingletonFileNameLibrary.getInstance().getListOfFileName().remove(mPictureFileName);
-                                if (SingletonFileNameLibrary.getInstance().getListOfFileName().size() < 5) {
-                                    isCameraPicAvailable = true;
-                                }
-                            }
-                            mArrayOFImages[i].setVisibility(View.GONE);
-                        }
-                    }
-                }
-            }
-        }
+              if (mFileName != null) {
+                  ArrayList<String> mListOfFileNames = SingletonFileNameLibrary.getInstance().getListOfFileName();
+                  mListOfFileNames.size();
+                  // disable click for camera icon
+                  if (mListOfFileNames.size() >= 5) {
+                      isCameraPicAvailable = false;
+                  }
+                  for (int i = 0; i < mListOfFileNames.size(); i++) {
+
+                      File mFile = new File(FormAction.this.getExternalFilesDir(null), mListOfFileNames.get(i));
+                      final int THUMBSIZE = 400;
+
+                      mBitMapImage = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(mFile.toString()), THUMBSIZE, THUMBSIZE);
+
+                      mArrayOFImages[i].setImageBitmap(mBitMapImage);
+
+
+                      // adding file name twice as well as  position
+                      mArrayOFImages[i].setTag(R.string.tag_name, mListOfFileNames.get(i));
+                      mArrayOFImages[i].setTag(R.string.image, i);
+                      //    mArrayOFImages[i].setTag(R.string.filename, mFileName);
+                      mArrayOFImages[i].setOnClickListener(this);
+                      mArrayOFImages[i].setVisibility(View.VISIBLE);
+                  }
+              } else {
+                  Log.v("FileName", "isMissing & current listOfFileNames size is" + SingletonFileNameLibrary.getInstance().getListOfFileName().size());
+              }
+
+          }
+
+
+          // user taps on delete
+          // get image position for that particular image from(TakePictureOrVideoActivity) and
+          // delete the file name from the list of filenames
+          // make camera available
+          // make the imageview gone
+          else {
+              for (int i = 0; i < mArrayOFImages.length; i++) {
+                  if (mArrayOFImages[i].getTag(R.string.image) != null) {
+                      // getting tagID to delete or make view gone as well as remove file name from to make camera button available
+                      if (mArrayOFImages[i].getTag(R.string.image).equals(data.getIntExtra("imageToDelete", 0))) {
+                          if (SingletonFileNameLibrary.getInstance().getListOfFileName().contains(mPictureFileName)) {
+                              SingletonFileNameLibrary.getInstance().getListOfFileName().remove(mPictureFileName);
+                              if (SingletonFileNameLibrary.getInstance().getListOfFileName().size() < 5) {
+                                  isCameraPicAvailable = true;
+                              }
+                          }
+                          mArrayOFImages[i].setVisibility(View.GONE);
+                      }
+                  }
+              }
+          }
+      }
+  }
+
+  catch(Exception ex){
+      AlertDialog.Builder mBuilder = new AlertDialog.Builder(this);
+      mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                  @Override
+                  public void onClick(DialogInterface dialog, int which) {
+
+
+                      ex.getMessage();
+                      dialog.dismiss();
+                  }
+              }
+      );
+      AlertDialog alert = mBuilder.create();
+      alert.show();
+  }
 
 // I am getting the fileName from TakePictureOrVideo class
         // adding filename to the list
@@ -335,42 +383,83 @@ catch(Exception ex){
 important imageview tags are:
 file name, image position,
  */
-        if (requestCode == RequestThumbnailPicture && resultCode == RESULT_OK) {
-            // getting newFileName & isUpdate from onClick of Update
-            String mFileName = data.getStringExtra("fileName");
-            if (mFileName != null) {
-                SingletonFileNameLibrary.getInstance().setmListOfFileNames(mFileName);
-                ArrayList<String> mListOfFileNames = SingletonFileNameLibrary.getInstance().getListOfFileName();
-                mListOfFileNames.size();
-                if (mListOfFileNames.size() >= 5) {
-                    isCameraPicAvailable = false;
-                }
-                for (int i = 0; i < mListOfFileNames.size(); i++) {
-                    File mFile = new File(FormAction.this.getExternalFilesDir(null), mListOfFileNames.get(i));
-                    final int THUMBSIZE = 400;
-                    mBitMapImage = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(mFile.toString()), THUMBSIZE, THUMBSIZE);
-                    mArrayOFImages[i].setImageBitmap(mBitMapImage);
-                    mArrayOFImages[i].setTag(R.string.tag_name, mListOfFileNames.get(i));
-                    mArrayOFImages[i].setTag(R.string.image, i);
-                    //     mArrayOFImages[i].setTag(R.string.filename, mFileName);
-                    mArrayOFImages[i].setOnClickListener(this);
-                    mArrayOFImages[i].setVisibility(View.VISIBLE);
-                }
-            } else {
-                Log.v("FileName", "isMissing & current listOfFileNames size is"
-                        + SingletonFileNameLibrary.getInstance().getListOfFileName().size());
-            }
-        }
 
-        /*fileName
-         */
-        // get the video recording filename and load the bitmap in the imageview
-        if (requestCode == RequestThumbnailVideo && resultCode == RESULT_OK) {
-            mVideoFileName = data.getExtras().getString("fileName");
-            Bitmap bitmap = ThumbnailUtils.createVideoThumbnail(mVideoFileName, MediaStore.Video.Thumbnails.MINI_KIND);
-            mFarmerDetailsVideo1.setImageBitmap(bitmap);
-            mFarmerDetailsVideo1.setVisibility(View.VISIBLE);
+
+try {
+
+    if (requestCode == RequestThumbnailPicture && resultCode == RESULT_OK) {
+        // getting newFileName & isUpdate from onClick of Update
+        String mFileName = data.getStringExtra("fileName");
+        if (mFileName != null) {
+            SingletonFileNameLibrary.getInstance().setmListOfFileNames(mFileName);
+            ArrayList<String> mListOfFileNames = SingletonFileNameLibrary.getInstance().getListOfFileName();
+            mListOfFileNames.size();
+            if (mListOfFileNames.size() >= 5) {
+                isCameraPicAvailable = false;
+            }
+            for (int i = 0; i < mListOfFileNames.size(); i++) {
+                File mFile = new File(FormAction.this.getExternalFilesDir(null), mListOfFileNames.get(i));
+                final int THUMBSIZE = 400;
+                mBitMapImage = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(mFile.toString()), THUMBSIZE, THUMBSIZE);
+                mArrayOFImages[i].setImageBitmap(mBitMapImage);
+                mArrayOFImages[i].setTag(R.string.tag_name, mListOfFileNames.get(i));
+                mArrayOFImages[i].setTag(R.string.image, i);
+                //     mArrayOFImages[i].setTag(R.string.filename, mFileName);
+                mArrayOFImages[i].setOnClickListener(this);
+                mArrayOFImages[i].setVisibility(View.VISIBLE);
+            }
+        } else {
+            Log.v("FileName", "isMissing & current listOfFileNames size is"
+                    + SingletonFileNameLibrary.getInstance().getListOfFileName().size());
         }
+    }
+}
+catch(Exception ex){
+    AlertDialog.Builder mBuilder = new AlertDialog.Builder(this);
+    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+
+                    ex.getMessage();
+                    dialog.dismiss();
+                }
+            }
+    );
+    AlertDialog alert = mBuilder.create();
+    alert.show();
+}
+
+
+
+try {
+
+    /*fileName
+     */
+    // get the video recording filename and load the bitmap in the imageview
+    if (requestCode == RequestThumbnailVideo && resultCode == RESULT_OK) {
+        mVideoFileName = data.getExtras().getString("fileName");
+        Bitmap bitmap = ThumbnailUtils.createVideoThumbnail(mVideoFileName, MediaStore.Video.Thumbnails.MINI_KIND);
+        mFarmerDetailsVideo1.setImageBitmap(bitmap);
+        mFarmerDetailsVideo1.setVisibility(View.VISIBLE);
+    }
+
+}
+catch(Exception ex){
+    AlertDialog.Builder mBuilder = new AlertDialog.Builder(this);
+    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+
+                    ex.getMessage();
+                    dialog.dismiss();
+                }
+            }
+    );
+    AlertDialog alert = mBuilder.create();
+    alert.show();
+}
 
 
     }
@@ -382,7 +471,7 @@ file name, image position,
         setContentView(R.layout.activity_form);
 
         // these two represent icons
-        mTakePicture = findViewById(R.id.take_picture);
+       // mTakePicture = findViewById(R.id.take_picture);
 
         mTakeVideo = findViewById(R.id.take_video);
 
@@ -403,7 +492,7 @@ file name, image position,
         // mFarmerImageGroup = findViewById(R.id.group);
 
         // all click events are handled in switch case buddy
-        mTakePicture.setOnClickListener(this);
+//        mTakePicture.setOnClickListener(this);
         mTakeVideo.setOnClickListener(this);
         mJustCameraButton.setOnClickListener(this);
         mArrayOFImages = new ImageView[]{

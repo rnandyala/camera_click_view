@@ -62,58 +62,113 @@ public class TakePictureOrVideo extends AppCompatActivity implements PopupMenu.O
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState, @NonNull PersistableBundle outPersistentState) {
         super.onSaveInstanceState(outState, outPersistentState);
+try {
+    outPersistentState.putString("fromVideothubnail", String.valueOf(isFromVideo));
+}
+catch (Exception ex){
+    AlertDialog.Builder mBuilder = new AlertDialog.Builder(this);
+    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
 
-        outPersistentState.putString("fromVideothubnail", String.valueOf(isFromVideo));
-    }
+
+                    ex.getMessage();
+                    dialog.dismiss();
+                }
+            }
+    );
+    AlertDialog alert = mBuilder.create();
+    alert.show();
+}
+
+}
 
 
     @Override
     public void onRestoreInstanceState(@Nullable Bundle savedInstanceState, @Nullable PersistableBundle persistentState) {
         super.onRestoreInstanceState(savedInstanceState, persistentState);
 
-        String videoState = persistentState.getString("fromVideothubnail", "");
+        try {
+            String videoState = persistentState.getString("fromVideothubnail", "");
 
-        isFromVideo = Boolean.getBoolean(videoState);
-    }
+            isFromVideo = Boolean.getBoolean(videoState);
+        }
+        catch (Exception ex){
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+
+                            ex.getMessage();
+                            dialog.dismiss();
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
+        }
+
+        }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (REQUEST_CODE_CAMERA == requestCode && resultCode == RESULT_OK) {
 
-            fileName = data.getStringExtra("fileName");
+        try {
+            if (REQUEST_CODE_CAMERA == requestCode && resultCode == RESULT_OK) {
 
-            fileName.isEmpty();
+                fileName = data.getStringExtra("fileName");
 
-            mFile = new File(TakePictureOrVideo.this.getExternalFilesDir(null), fileName);
-            final int THUMBSIZE = 400;
+                fileName.isEmpty();
 
-            mThumbImage = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(mFile.toString()),
-                    THUMBSIZE, THUMBSIZE);
+                mFile = new File(TakePictureOrVideo.this.getExternalFilesDir(null), fileName);
+                final int THUMBSIZE = 400;
+
+                mThumbImage = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(mFile.toString()),
+                        THUMBSIZE, THUMBSIZE);
 
 
-            mTakePhoto.setImageBitmap(mThumbImage);
+                mTakePhoto.setImageBitmap(mThumbImage);
 
+            }
+        }
+        catch(Exception ex){
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+
+                            ex.getMessage();
+                            dialog.dismiss();
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
         }
 
-        if (REQUEST_CODE_VIDEO == requestCode && resultCode == RESULT_OK) {
-            fileName = data.getStringExtra("fileName");
 
-            fileName.isEmpty();
+        try {
+            if (REQUEST_CODE_VIDEO == requestCode && resultCode == RESULT_OK) {
+                fileName = data.getStringExtra("fileName");
 
-            isFromVideo = Boolean.parseBoolean(data.getStringExtra("fromVideothubnail"));
+                fileName.isEmpty();
+
+                isFromVideo = Boolean.parseBoolean(data.getStringExtra("fromVideothubnail"));
 
 
-            //  mFile = new File(TakePictureOrVideo.this.getExternalFilesDir(null), fileName);
+                //  mFile = new File(TakePictureOrVideo.this.getExternalFilesDir(null), fileName);
 
-            //get the imageUri
-            // final Uri tempImageUri = Uri.fromFile(mFile);
+                //get the imageUri
+                // final Uri tempImageUri = Uri.fromFile(mFile);
 
-            //String mAuthority =    tempImageUri.getAuthority();
+                //String mAuthority =    tempImageUri.getAuthority();
 
-            //mAuthority.isEmpty();
+                //mAuthority.isEmpty();
 
-            mThumbImage = ThumbnailUtils.createVideoThumbnail(fileName, MediaStore.Video.Thumbnails.MINI_KIND);
+                mThumbImage = ThumbnailUtils.createVideoThumbnail(fileName, MediaStore.Video.Thumbnails.MINI_KIND);
             /*
 
             final int THUMBSIZE = 400;
@@ -121,7 +176,23 @@ public class TakePictureOrVideo extends AppCompatActivity implements PopupMenu.O
             Bitmap ThumbImage = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(mFile.toString()),
                     THUMBSIZE, THUMBSIZE);*/
 
-            mRecordVideo.setImageBitmap(mThumbImage);
+                mRecordVideo.setImageBitmap(mThumbImage);
+            }
+        }
+        catch (Exception ex){
+            AlertDialog.Builder mBuilder = new AlertDialog.Builder(this);
+            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+
+                            ex.getMessage();
+                            dialog.dismiss();
+                        }
+                    }
+            );
+            AlertDialog alert = mBuilder.create();
+            alert.show();
         }
 
 
@@ -161,7 +232,26 @@ public class TakePictureOrVideo extends AppCompatActivity implements PopupMenu.O
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        finish();
+
+
+                       try {
+                           finish();
+                       }
+                       catch(Exception ex){
+                           AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
+                           mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                       @Override
+                                       public void onClick(DialogInterface dialog, int which) {
+
+
+                                           ex.getMessage();
+                                           dialog.dismiss();
+                                       }
+                                   }
+                           );
+                           AlertDialog alert = mBuilder.create();
+                           alert.show();
+                       }
 
 /*
                         if (mThumbImage != null) {
@@ -365,23 +455,31 @@ catch(Exception ex){
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
-                        mBuilder.setMessage("cancel event triggered").setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        if (mFile != null) {
-                                            boolean isFilePresent = mFile.delete();
-                                            if (!isFilePresent) {
-                                                Toast.makeText(TakePictureOrVideo.this, "unable_to_delete_the_file", Toast.LENGTH_LONG);
-                                            }
-                                        }
-
-                                        finish();
-                                    }
+                        try{
+                            if (mFile != null) {
+                                boolean isFilePresent = mFile.delete();
+                                if (!isFilePresent) {
+                                    Toast.makeText(TakePictureOrVideo.this, "unable_to_delete_the_file", Toast.LENGTH_LONG).show();
                                 }
-                        );
-                        AlertDialog alert = mBuilder.create();
-                        alert.show();
+                            }
+
+                            finish();
+                        }
+                        catch (Exception ex){
+                            AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
+                            mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+
+                                        }
+                                    }
+                            );
+                            AlertDialog alert = mBuilder.create();
+                            alert.show();
+                        }
+
+
+
                         // delete the image from the storage
                         // Unable to delete the files in package folder
 
@@ -455,26 +553,83 @@ catch(Exception ex){
         //  String mFromCameraPreview = getIntent().getStringExtra("fromVideothubnail");
 
 
-
-        // commented on may 4th for testing
-     int camera = getIntent().getIntExtra("camera", 0);
-     int video = getIntent().getIntExtra("video", 0);
-
-
-
-        // get file name and where it is coming from
-        String mFileName = getIntent().getStringExtra("mFileNameForPicture");
-        isFromImage = getIntent().getBooleanExtra("comingfrom_image", false);
+try {
+    // commented on may 4th for testing
+    int camera = getIntent().getIntExtra("camera", 0);
+    int video = getIntent().getIntExtra("video", 0);
 
 
-        mImageTagID = getIntent().getIntExtra("deleteImagePosition", 1);
+    // get file name and where it is coming from
+    String mFileName = getIntent().getStringExtra("mFileNameForPicture");
+    isFromImage = getIntent().getBooleanExtra("comingfrom_image", false);
 
 
-        // get file name and load the thumbnail
+    mImageTagID = getIntent().getIntExtra("deleteImagePosition", 1);
 
-        String mVideoFileName = getIntent().getStringExtra(FormAction.VIDEO);
-        isFromVideo = getIntent().getBooleanExtra("comingFromVideo", false);
 
+    // get file name and load the thumbnail
+
+    String mVideoFileName = getIntent().getStringExtra(FormAction.VIDEO);
+    isFromVideo = getIntent().getBooleanExtra("comingFromVideo", false);
+
+
+    setVideoData(isFromVideo, mVideoFileName);
+
+    if (camera == 1) {
+        mVideoGroup.setVisibility(View.GONE);
+        mPictureGroup.setVisibility(View.VISIBLE);
+
+        mFirstVisit.setVisibility(View.VISIBLE);
+        mUpdateVisit.setVisibility(View.GONE);
+    }
+
+
+
+    if (video == 2) {
+        mPictureGroup.setVisibility(View.GONE);
+        mVideoGroup.setVisibility(View.VISIBLE);
+        mFirstVisit.setVisibility(View.VISIBLE);
+        mUpdateVisit.setVisibility(View.GONE);
+    }
+
+
+    if (mFileName != null) {
+        mFile = new File(TakePictureOrVideo.this.getExternalFilesDir(null), mFileName);
+        final int THUMBSIZE = 400;
+
+        new Thread() {
+            @Override
+            public void run() {
+                super.run();
+                mThumbImage = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(mFile.toString()),
+                        THUMBSIZE, THUMBSIZE);
+
+                setmThumbImage(mThumbImage);
+            }
+        }.start();
+
+        mFirstVisit.setVisibility(View.GONE);
+        mUpdateVisit.setVisibility(View.VISIBLE);
+
+    }
+
+
+
+
+
+}
+catch(Exception ex){
+    AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
+    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                }
+            }
+    );
+    AlertDialog alert = mBuilder.create();
+    alert.show();
+}
         /*
         if(mFromCameraPreview != null){
           isFromVideo =   Boolean.getBoolean(mFromCameraPreview);
@@ -483,49 +638,11 @@ catch(Exception ex){
         //"fromVideothubnail"
 
 
-        setVideoData(isFromVideo, mVideoFileName);
 
-        if (camera == 1) {
-            mVideoGroup.setVisibility(View.GONE);
-            mPictureGroup.setVisibility(View.VISIBLE);
-
-            mFirstVisit.setVisibility(View.VISIBLE);
-            mUpdateVisit.setVisibility(View.GONE);
-        }
-
-
-
-        if (video == 2) {
-            mPictureGroup.setVisibility(View.GONE);
-            mVideoGroup.setVisibility(View.VISIBLE);
-            mFirstVisit.setVisibility(View.VISIBLE);
-            mUpdateVisit.setVisibility(View.GONE);
-        }
-
-
-        if (mFileName != null) {
-            mFile = new File(TakePictureOrVideo.this.getExternalFilesDir(null), mFileName);
-            final int THUMBSIZE = 400;
-
-            new Thread() {
-                @Override
-                public void run() {
-                    super.run();
-                    mThumbImage = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(mFile.toString()),
-                            THUMBSIZE, THUMBSIZE);
-
-                    setmThumbImage(mThumbImage);
-                }
-            }.start();
-
-            mFirstVisit.setVisibility(View.GONE);
-            mUpdateVisit.setVisibility(View.VISIBLE);
-
-        }
     }
 
     private void setVideoData(boolean isFromVideo, String mVideoFileName) {
-
+try{
         if (isFromVideo && mVideoFileName != null) {
 
             //   mFile = new File(TakePictureOrVideo.this.getExternalFilesDir(null), mVideoFileName);
@@ -533,7 +650,20 @@ catch(Exception ex){
             setmThumbVideo(bitmap);
 
 
-        }
+        }}
+catch(Exception ex){
+    AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
+    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                }
+            }
+    );
+    AlertDialog alert = mBuilder.create();
+    alert.show();
+
+}
 
 
         mPictureGroup.setVisibility(View.GONE);
@@ -545,109 +675,149 @@ catch(Exception ex){
 
 
     private void setmThumbVideo(Bitmap mThumbImage) {
-        runOnUiThread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        mRecordVideo.setImageBitmap(mThumbImage);
-                    }
-                }
 
-        );
+
+      try {
+          runOnUiThread(
+                  new Runnable() {
+                      @Override
+                      public void run() {
+                          mRecordVideo.setImageBitmap(mThumbImage);
+                      }
+                  }
+
+          );
+      }
+      catch(Exception ex){
+          AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
+          mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                      @Override
+                      public void onClick(DialogInterface dialog, int which) {
+
+                      }
+                  }
+          );
+          AlertDialog alert = mBuilder.create();
+          alert.show();
+      }
     }
 
 
     public void setmThumbImage(Bitmap mThumbImage) {
-        runOnUiThread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        mTakePhoto.setImageBitmap(mThumbImage);
-                    }
-                }
+     try {
 
-        );
+         runOnUiThread(
+                 new Runnable() {
+                     @Override
+                     public void run() {
+                         mTakePhoto.setImageBitmap(mThumbImage);
+                     }
+                 }
+
+         );
+     }
+     catch(Exception ex){
+         AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
+         mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                     @Override
+                     public void onClick(DialogInterface dialog, int which) {
+
+                     }
+                 }
+         );
+         AlertDialog alert = mBuilder.create();
+         alert.show();
+     }
 
     }
 
 
     @Override
     public boolean onMenuItemClick(MenuItem item) {
-
-        int id = item.getItemId();
-
-
-        switch (item.getItemId()) {
+try {
+    int id = item.getItemId();
 
 
-            case R.id.concept_global_video:
-                // case R.id.concept_global_video:
-                try {
-                    Intent mTakeVideo = new Intent(TakePictureOrVideo.this, CameraActivity.class);
-                    //           mTakeVideo.putExtra("video", true);
-                    mTakeVideo.putExtra("fromVideothubnail", String.valueOf(isFromVideo));
-                    startActivityForResult(mTakeVideo, REQUEST_CODE_VIDEO);
-                    isTakeVideo = true;
-                } catch (Exception ex) {
-                    AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
-                    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
+    switch (item.getItemId()) {
 
 
-                                }
+        case R.id.concept_global_video:
+            // case R.id.concept_global_video:
+            try {
+                Intent mTakeVideo = new Intent(TakePictureOrVideo.this, CameraActivity.class);
+                //           mTakeVideo.putExtra("video", true);
+                mTakeVideo.putExtra("fromVideothubnail", String.valueOf(isFromVideo));
+                startActivityForResult(mTakeVideo, REQUEST_CODE_VIDEO);
+                isTakeVideo = true;
+            } catch (Exception ex) {
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
+                mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+
                             }
-                    );
-                    AlertDialog alert = mBuilder.create();
-                    alert.show();
-                }
+                        }
+                );
+                AlertDialog alert = mBuilder.create();
+                alert.show();
+            }
 
 
-                return true;
+            return true;
 
 
-            case R.id.concept_global_camera:
+        case R.id.concept_global_camera:
 
 
-                try{
-                    // Open CameraActivity
-                    isTakePhoto = true;
-                    Intent mTakePicture = new Intent(TakePictureOrVideo.this, CameraActivity.class);
+            try {
+                // Open CameraActivity
+                isTakePhoto = true;
+                Intent mTakePicture = new Intent(TakePictureOrVideo.this, CameraActivity.class);
 
-                    mTakePicture.putExtra("picture", true);
-                    startActivityForResult(mTakePicture, REQUEST_CODE_CAMERA);
-                }
-
-                catch(Exception ex){
-                    AlertDialog.Builder mBuilder2 = new AlertDialog.Builder(TakePictureOrVideo.this);
-                    mBuilder2.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
+                mTakePicture.putExtra("picture", true);
+                startActivityForResult(mTakePicture, REQUEST_CODE_CAMERA);
+            } catch (Exception ex) {
+                AlertDialog.Builder mBuilder2 = new AlertDialog.Builder(TakePictureOrVideo.this);
+                mBuilder2.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
 
 
-                                }
                             }
-                    );
-                    AlertDialog alert2 = mBuilder2.create();
-                    alert2.show();
+                        }
+                );
+                AlertDialog alert2 = mBuilder2.create();
+                alert2.show();
+            }
+
+
+            return true;
+        case R.id.device_camera:
+            Toast.makeText(this, "WIP", Toast.LENGTH_LONG).show();
+            return true;
+
+        case R.id.device_video:
+            Toast.makeText(this, "WIP", Toast.LENGTH_LONG).show();
+            return true;
+
+        default:
+            return false;
+    }
+}
+catch(Exception ex){
+    AlertDialog.Builder mBuilder = new AlertDialog.Builder(TakePictureOrVideo.this);
+    mBuilder.setMessage(ex.getMessage()).setTitle("PMC POC").setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
                 }
-
-
-
-
-                return true;
-            case R.id.device_camera:
-                Toast.makeText(this, "WIP", Toast.LENGTH_LONG).show();
-                return true;
-
-            case R.id.device_video:
-                Toast.makeText(this, "WIP", Toast.LENGTH_LONG).show();
-                return true;
-
-            default:
-                return false;
-        }
-
+            }
+    );
+    AlertDialog alert = mBuilder.create();
+    alert.show();
+}
+return false;
     }
 }
 
